@@ -1,4 +1,5 @@
 "use client";
+import SiteNav from "@/components/SiteNav";
 
 import Link from "next/link";
 import WarRoomMap from "./WarRoomMap";
@@ -7,6 +8,7 @@ import { jokeVenues } from "@/data/warRoom";
 export default function WarRoom() {
   return (
     <main className="history-page">
+      <SiteNav current="/war-room" />
       <header className="history-hero">
         <p className="history-kicker">
           <Link href="/">&larr; arborday.beer</Link>

@@ -1,23 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./ideas.module.css";
+import SiteNav from "@/components/SiteNav";
 import {
   CATEGORIES,
   CATEGORY_ORDER,
   MAX_LENGTH,
   MIN_LENGTH,
-  loadItems,
   loadVotes,
-  makeId,
-  saveItems,
   saveVotes,
   score,
   type BoardItem,
   type IdeaCategory,
   type VoteMap,
 } from "@/data/ideas";
+import {
+  castVote as castVoteRemote,
+  createIdea as createIdeaRemote,
+  fetchIdeas,
+  type IdeaRow,
+} from "@/lib/supabase";
 
 type Filter = "all" | IdeaCategory;
 type Sort = "top" | "newest";
@@ -38,14 +42,47 @@ function formatDate(iso: string): string {
   });
 }
 
+function toBoardItem(row: IdeaRow): BoardItem {
+  return {
+    id: row.id,
+    text: row.text,
+    category: row.category,
+    createdAt: row.created_at,
+    ups: row.ups,
+    downs: row.downs,
+  };
+}
+
 export default function IdeasBoard() {
-  const [items, setItems] = useState<BoardItem[]>(() => loadItems());
+  const [items, setItems] = useState<BoardItem[]>([]);
   const [votes, setVotes] = useState<VoteMap>(() => loadVotes());
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [category, setCategory] = useState<IdeaCategory>("idea");
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("top");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchIdeas()
+      .then((rows) => {
+        if (!cancelled) {
+          setItems(rows.map(toBoardItem));
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError("The board would not load. Check your connection and refresh.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const counts = useMemo(() => {
     const c: Record<IdeaCategory, number> = {
@@ -81,7 +118,7 @@ export default function IdeasBoard() {
     return { posts: items.length, totalUps, leading };
   }, [items, counts]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const clean = text.trim();
@@ -89,45 +126,64 @@ export default function IdeasBoard() {
       setError("Give it at least a few characters. The box has standards.");
       return;
     }
-    const item: BoardItem = {
-      id: makeId(),
-      text: clean.slice(0, MAX_LENGTH),
-      category,
-      createdAt: new Date().toISOString(),
-      ups: 0,
-      downs: 0,
-    };
-    const next = [item, ...items];
-    setItems(next);
-    saveItems(next);
-    setText("");
+    try {
+      const row = await createIdeaRemote(clean.slice(0, MAX_LENGTH), category);
+      setItems((prev) => [toBoardItem(row), ...prev]);
+      setText("");
+    } catch {
+      setError("The box jammed. Give it another shot.");
+    }
   }
 
   /** One vote per device per post. Tapping the same arrow again removes the vote; tapping the other arrow switches it. */
-  function vote(dir: 1 | -1, id: string) {
+  async function vote(dir: 1 | -1, id: string) {
     const current = votes[id];
+    let upDelta = 0;
+    let downDelta = 0;
+    if (current === dir) {
+      if (dir === 1) upDelta = -1;
+      else downDelta = -1;
+    } else {
+      if (current === 1) upDelta -= 1;
+      if (current === -1) downDelta -= 1;
+      if (dir === 1) upDelta += 1;
+      else downDelta += 1;
+    }
     const nextVotes: VoteMap = { ...votes };
-    const nextItems = items.map((item) => {
-      if (item.id !== id) return item;
-      let ups = item.ups;
-      let downs = item.downs;
-      if (current === dir) {
-        delete nextVotes[id];
-        if (dir === 1) ups -= 1;
-        else downs -= 1;
-      } else {
-        if (current === 1) ups -= 1;
-        if (current === -1) downs -= 1;
-        if (dir === 1) ups += 1;
-        else downs += 1;
-        nextVotes[id] = dir;
-      }
-      return { ...item, ups: Math.max(0, ups), downs: Math.max(0, downs) };
-    });
-    setItems(nextItems);
+    if (current === dir) delete nextVotes[id];
+    else nextVotes[id] = dir;
+    // Optimistic UI; the RPC adjusts the shared counts atomically.
     setVotes(nextVotes);
-    saveItems(nextItems);
     saveVotes(nextVotes);
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id !== id
+          ? item
+          : {
+              ...item,
+              ups: Math.max(0, item.ups + upDelta),
+              downs: Math.max(0, item.downs + downDelta),
+            },
+      ),
+    );
+    try {
+      await castVoteRemote(id, upDelta, downDelta);
+    } catch {
+      // Roll back the optimistic update on failure.
+      setVotes(votes);
+      saveVotes(votes);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id !== id
+            ? item
+            : {
+                ...item,
+                ups: Math.max(0, item.ups - upDelta),
+                downs: Math.max(0, item.downs - downDelta),
+              },
+        ),
+      );
+    }
   }
 
   const emptyForFilter =
@@ -137,6 +193,7 @@ export default function IdeasBoard() {
 
   return (
     <main className="history-page">
+      <SiteNav current="/ideas" />
       <header className="history-hero">
         <p className="history-kicker">
           <Link href="/">&larr; arborday.beer</Link>
@@ -259,7 +316,11 @@ export default function IdeasBoard() {
           </div>
         </div>
 
-        {visible.length === 0 ? (
+        {loading ? (
+          <p className={styles.empty}>Shaking the box awake&hellip;</p>
+        ) : loadError ? (
+          <p className={styles.empty} role="alert">{loadError}</p>
+        ) : visible.length === 0 ? (
           <p className={styles.empty}>{emptyForFilter}</p>
         ) : (
           <ol className={styles.board}>
@@ -304,7 +365,7 @@ export default function IdeasBoard() {
             })}
           </ol>
         )}
-        <p className={styles.note}>Votes are saved on this device for now.</p>
+        <p className={styles.note}>Posts and votes are shared with everyone. Your own votes are remembered on this device.</p>
       </section>
 
       <footer className="history-footer">

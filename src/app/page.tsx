@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PARTIFUL_URL } from "@/lib/site";
 import { Fraunces, Karla } from "next/font/google";
 import Countdown from "./countdown";
 
@@ -16,6 +17,16 @@ const leaves = ["🍃", "🍂", "🍃", "🍂", "🍃", "🍂", "🍃", "🍂"];
 export default function Home() {
   return (
     <main className={`hero ${body.className}`}>
+      <nav className="home-nav" aria-label="Site">
+        <Link href="/history">Past Parties</Link>
+        <Link href="/hall-of-fame">Hall of Fame</Link>
+        <Link href="/ideas">Ideas &amp; Requests</Link>
+        <Link href="/photo-wall">Photo Wall</Link>
+        <Link href="/war-room">War Room</Link>
+        <a className="rsvp-btn" href={PARTIFUL_URL} target="_blank" rel="noopener">
+          RSVP
+        </a>
+      </nav>
       <div className="leaves" aria-hidden="true">
         {leaves.map((l, i) => (
           <span key={i} style={{ ["--i" as string]: i }}>{l}</span>
@@ -49,6 +60,12 @@ export default function Home() {
         <div><dt>When</dt><dd>Friday, April 30, 2027</dd></div>
         <div><dt>Where</dt><dd>Venue to be announced</dd></div>
       </dl>
+
+      <p className="hero-rsvp">
+        <a className="rsvp-btn" href={PARTIFUL_URL} target="_blank" rel="noopener">
+          RSVP on Partiful
+        </a>
+      </p>
 
       <footer>arborday.beer &middot; more details coming soon &middot; <Link href="/history">past parties</Link> &middot; <Link href="/hall-of-fame">out-of-towner hall of fame</Link> &middot; <Link href="/ideas">ideas &amp; requests</Link></footer>
     </main>
