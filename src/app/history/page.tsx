@@ -1,18 +1,23 @@
-import { editions } from "@/data/history";
 import VenueMap, { MapPin } from "./VenueMap";
+import { fetchEditions } from "@/lib/supabase";
 
-/** Pins are derived from the editions data, so the map has no hardcoded venues. */
-const pins: MapPin[] = editions
-  .filter((e) => e.lat !== undefined && e.lng !== undefined)
-  .map((e) => ({
-    year: e.year,
-    venue: e.venue,
-    neighborhood: e.neighborhood,
-    lat: e.lat as number,
-    lng: e.lng as number,
-  }));
+/** Revalidate the timeline from Supabase hourly. */
+export const revalidate = 3600;
 
-export default function HistoryPage() {
+export default async function HistoryPage() {
+  const editions = await fetchEditions();
+
+  /** Pins are derived from the editions data, so the map has no hardcoded venues. */
+  const pins: MapPin[] = editions
+    .filter((e) => e.lat !== undefined && e.lng !== undefined)
+    .map((e) => ({
+      year: e.year,
+      venue: e.venue,
+      neighborhood: e.neighborhood,
+      lat: e.lat as number,
+      lng: e.lng as number,
+    }));
+
   return (
     <main className="history-page">
       <header className="history-hero">
