@@ -51,7 +51,7 @@ export const editions: Edition[] = [
     year: 2025,
     date: "Friday, April 25, 2025",
     venue: "Easy Bar",
-    neighborhood: "East Village",
+    neighborhood: "Wicker Park",
     address: "1944 W Chicago Ave",
     lat: 41.8962,
     lng: -87.67635,
