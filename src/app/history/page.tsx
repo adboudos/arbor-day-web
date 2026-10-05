@@ -1,67 +1,71 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { Fraunces, Karla } from "next/font/google";
 import { editions } from "@/data/history";
+import VenueMap, { MapPin } from "./VenueMap";
 
-const display = Fraunces({ subsets: ["latin"], weight: ["900"] });
-const body = Karla({ subsets: ["latin"], weight: ["400", "700"] });
+/** Pins are derived from the editions data — the map has no hardcoded venues. */
+const pins: MapPin[] = editions
+  .filter((e) => e.lat !== undefined && e.lng !== undefined)
+  .map((e) => ({
+    year: e.year,
+    venue: e.venue,
+    neighborhood: e.neighborhood,
+    lat: e.lat as number,
+    lng: e.lng as number,
+  }));
 
-export const metadata: Metadata = {
-  title: "Past Arbor Days",
-  description: "Where the Arbor Day party has been, year by year.",
-};
-
-export default function History() {
+export default function HistoryPage() {
   return (
-    <main className={`history ${body.className}`}>
-      <p className="kicker">The story so far</p>
-      <h1 className={display.className}>Past Arbor Days</h1>
-      <p className="tagline">One Friday every April. Plant a tree. Raise a glass.</p>
+    <main className="history-page">
+      <header className="history-hero">
+        <p className="history-kicker">
+          <a href="/">&larr; arborday.beer</a>
+        </p>
+        <h1>Six years of Arbor Day</h1>
+        <p className="history-tagline">
+          Every bar that&apos;s hosted the party, pinned on one map. The 2026
+          flyer calls that year the 5th annual &mdash; so it all started in 2022.
+        </p>
+      </header>
 
-      <ol className="timeline">
-        {editions.map((edition) => (
-          <li
+      <section className="history-map-section" aria-label="Map of past venues">
+        <VenueMap pins={pins} />
+      </section>
+
+      <div className="timeline">
+        {editions.map((edition, i) => (
+          <article
             key={edition.year}
-            className={`stop${edition.upcoming ? " upcoming" : ""}`}
+            className={`timeline-item ${i % 2 ? "flip" : ""}`}
           >
-            <div className="node" aria-hidden="true">
-              <span className={display.className}>{edition.year}</span>
+            <div className="timeline-dot" aria-hidden="true" />
+            <div className="card">
+              <div className="year-badge">{edition.year}</div>
+              <p className="when">{edition.date}</p>
+              <h2 className="where">
+                {edition.venue}
+                {edition.neighborhood && (
+                  <span className="neighborhood"> &middot; {edition.neighborhood}</span>
+                )}
+              </h2>
+              {edition.address && <p className="address">{edition.address}</p>}
+              {edition.photos.length > 0 && (
+                <div className="photos">
+                  {edition.photos.map((photo) => (
+                    <img
+                      key={photo.src}
+                      src={photo.src}
+                      alt={photo.alt}
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-            <article className="card">
-              <p className={`venue ${display.className}`}>{edition.venue}</p>
-              <p className="where">
-                {edition.neighborhood} &middot; {edition.date}
-              </p>
-              <p className="deal">{edition.deal}</p>
-              {edition.stats.length > 0 && (
-                <dl className="stats">
-                  {edition.stats.map((stat) => (
-                    <div key={stat.label}>
-                      <dt>{stat.label}</dt>
-                      <dd>{stat.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-              {edition.highlights.length > 0 && (
-                <ul className="highlights">
-                  {edition.highlights.map((highlight) => (
-                    <li key={highlight}>{highlight}</li>
-                  ))}
-                </ul>
-              )}
-              {edition.upcoming && (
-                <p className="tocontinue">
-                  <Link href="/">Back to the countdown</Link>
-                </p>
-              )}
-            </article>
-          </li>
+          </article>
         ))}
-      </ol>
+      </div>
 
       <footer className="history-footer">
-        <Link href="/">&larr; Back to the party</Link>
+        <a href="/">&larr; Back to the countdown</a>
       </footer>
     </main>
   );
