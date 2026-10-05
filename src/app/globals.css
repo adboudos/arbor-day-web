@@ -30,3 +30,39 @@ footer{margin-top:1rem;font-size:.9rem;opacity:.7}
 }
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg) translateX(40px)}}
 @keyframes sway{50%{transform:rotate(3deg)}}
+
+/* ---- /history timeline (rendered from src/data/history.ts) ---- */
+.history-page{max-width:64rem;margin:0 auto;padding:4rem 1.25rem 3rem;display:flex;flex-direction:column;align-items:center;background:radial-gradient(circle at 50% 0%,#24502f 0,var(--forest) 70%);min-height:100vh}
+.history-hero{text-align:center;display:flex;flex-direction:column;gap:.9rem;align-items:center;margin-bottom:2rem}
+.history-hero h1{font-size:clamp(2.6rem,9vw,4.5rem);color:var(--cream)}
+.history-kicker{margin:0;font-size:.95rem}
+.history-kicker a{color:var(--leaf);font-weight:700;text-decoration:none}
+.history-tagline{margin:0;max-width:34rem;font-size:1.05rem;opacity:.85}
+.history-map-section{width:100%;margin-bottom:1rem}
+.venue-map{height:22rem;border-radius:1rem;overflow:hidden;border:1px solid rgba(246,240,220,.2);box-shadow:0 .35rem 1.25rem rgba(0,0,0,.3);background:#0e2317;z-index:0}
+.venue-map .leaflet-container{font-family:inherit}
+.venue-pin{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--forest);color:var(--cream);border:3px solid var(--amber);border-radius:50%;font-weight:900;font-size:.95rem;box-shadow:0 .2rem .6rem rgba(0,0,0,.45)}
+.venue-pin span{line-height:1}
+.timeline{list-style:none;margin:2.5rem 0 1rem;padding:0;width:100%;position:relative;display:flex;flex-direction:column;gap:2.75rem}
+.timeline::before{content:"";position:absolute;top:.5rem;bottom:.5rem;left:50%;width:3px;transform:translateX(-50%);border-radius:2px;background:linear-gradient(var(--leaf),rgba(143,207,106,.08))}
+.timeline-item{position:relative;display:grid;grid-template-columns:1fr 4rem 1fr;align-items:start;width:100%}
+.timeline-item .card{grid-column:1;grid-row:1;margin-right:1.25rem;background:var(--cream);color:var(--forest);border-radius:1rem;padding:1.25rem 1.5rem;box-shadow:0 .35rem 1.25rem rgba(0,0,0,.3);text-align:left}
+.timeline-item.flip .card{grid-column:3;margin-right:0;margin-left:1.25rem}
+.timeline-dot{grid-column:2;grid-row:1;justify-self:center;width:1.1rem;height:1.1rem;margin-top:1.6rem;border-radius:50%;background:var(--amber);box-shadow:0 0 0 .35rem rgba(242,182,50,.25);position:relative;z-index:1}
+.card .year-badge{font-size:2.2rem;font-weight:900;letter-spacing:-.02em;line-height:1}
+.card .when{margin:.3rem 0 0;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;opacity:.6}
+.card .where{margin:.35rem 0 0;font-size:1.6rem;line-height:1.15}
+.card .where .neighborhood{font-size:1rem;font-weight:700;opacity:.55}
+.card .address{margin:.25rem 0 0;font-size:.9rem;opacity:.65}
+.card .photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.6rem;margin-top:1rem}
+.card .photos img{width:100%;height:10rem;object-fit:cover;border-radius:.6rem;display:block;background:#0e2317}
+.card .photos img:only-child{height:14rem}
+.history-footer{margin-top:2rem;font-size:.95rem}
+.history-footer a{color:var(--leaf);font-weight:700;text-decoration:none}
+@media (max-width:46rem){
+  .timeline::before{left:.55rem;transform:none}
+  .timeline-item{grid-template-columns:2.2rem 1fr}
+  .timeline-item .timeline-dot{grid-column:1;margin-top:1.9rem}
+  .timeline-item .card,.timeline-item.flip .card{grid-column:2;margin:0 0 0 1rem}
+  .venue-map{height:18rem}
+}
