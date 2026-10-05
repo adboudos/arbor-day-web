@@ -44,6 +44,7 @@ export const editions: Edition[] = [
     lng: -87.65635,
     photos: [
       { src: "/history/2024-sluggers-1.jpg", alt: "Watching the NFL draft at the 2024 Arbor Day party at Sluggers" },
+      { src: "/history/2024-sluggers-we-three-trees.jpg", alt: "We Three Trees meme from the 2024 Arbor Day party at Sluggers" },
     ],
   },
   {
