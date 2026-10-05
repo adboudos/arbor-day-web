@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Fraunces, Karla } from "next/font/google";
 import Countdown from "./countdown";
 
@@ -49,7 +50,7 @@ export default function Home() {
         <div><dt>Where</dt><dd>Venue to be announced</dd></div>
       </dl>
 
-      <footer>arborday.beer &middot; more details coming soon</footer>
+      <footer>arborday.beer &middot; more details coming soon &middot; <Link href="/history">past parties</Link></footer>
     </main>
   );
 }
