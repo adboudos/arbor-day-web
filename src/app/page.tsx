@@ -50,7 +50,7 @@ export default function Home() {
         <div><dt>Where</dt><dd>Venue to be announced</dd></div>
       </dl>
 
-      <footer>arborday.beer &middot; more details coming soon &middot; <Link href="/history">past parties</Link></footer>
+      <footer>arborday.beer &middot; more details coming soon &middot; <Link href="/history">past parties</Link> &middot; <Link href="/hall-of-fame">out-of-towner hall of fame</Link></footer>
     </main>
   );
 }
