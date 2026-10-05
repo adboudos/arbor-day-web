@@ -1,5 +1,5 @@
 /**
- * Out-of-Towner Hall of Fame — data model + helpers.
+ * Out-of-Towner Hall of Fame: data model + helpers.
  *
  * Visitors add themselves with a name, party year, and hometown. Hometowns are
  * geocoded via Nominatim (OpenStreetMap, no API key), Illinois entries are
@@ -25,10 +25,10 @@ export interface OutOfTowner {
   addedAt: string;
 }
 
-/** Party years — the series started in 2022 (2026 was billed the 5th annual). */
+/** Party years. The series started in 2022 (2026 was billed the 5th annual). */
 export const PARTY_YEARS = [2022, 2023, 2024, 2025, 2026, 2027];
 
-/** Rough downtown Chicago — the party's home turf. */
+/** Rough downtown Chicago, the party's home turf. */
 export const CHICAGO = { lat: 41.8781, lng: -87.6298 };
 
 const STORAGE_KEY = "arbor-hall-of-fame";
@@ -101,7 +101,7 @@ function shortDisplayName(r: NominatimResult): string {
 /**
  * Geocode a hometown string. Throws on network failure; returns null when
  * nothing is found. `isIllinois` is best-effort from the geocoder's address
- * data — callers should also check the bounding box.
+ * data, so callers should also check the bounding box.
  */
 export async function geocodeHometown(
   query: string,
@@ -153,7 +153,7 @@ export function saveVisitors(visitors: OutOfTowner[]): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
   } catch {
-    // Storage full or unavailable — the in-memory list still works for the session.
+    // Storage full or unavailable: the in-memory list still works for the session.
   }
 }
 

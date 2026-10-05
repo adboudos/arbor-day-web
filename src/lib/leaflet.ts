@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Shared Leaflet loader — pulls Leaflet from the unpkg CDN once and caches it
+ * Shared Leaflet loader. Pulls Leaflet from the unpkg CDN once and caches it
  * on window. Extracted so multiple map components don't each reinvent it.
  */
 

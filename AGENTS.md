@@ -7,3 +7,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## House copy rules
+- Never use em dashes (U+2014) anywhere on the site: not in visible copy, metadata/titles, or code comments. Use commas, periods, or colons instead, restructuring the sentence when needed.

@@ -17,7 +17,7 @@ import {
 } from "@/data/outOfTowners";
 
 const ILLINOIS_REJECT =
-  "Whoa there, local. Illinois doesn't count — this hall is for travelers. (We love you anyway. You just don't get a pin.)";
+  "Whoa there, local. Illinois doesn't count. This hall is for travelers. (We love you anyway. You just don't get a pin.)";
 
 interface PendingEntry {
   name: string;
@@ -73,7 +73,7 @@ export default function HallOfFame() {
     }
     if (isDuplicate(visitors, cleanName, cleanTown, year)) {
       setError(
-        "Already in the hall — one induction per person, per hometown, per year.",
+        "Already in the hall. One induction per person, per hometown, per year.",
       );
       return;
     }
@@ -143,7 +143,7 @@ export default function HallOfFame() {
         <h1>Out-of-Towner Hall of Fame</h1>
         <p className="history-tagline">
           They came. They saw. They raised a glass. These legends traveled from
-          beyond Illinois to celebrate trees with us — and earned their pin.
+          beyond Illinois to celebrate trees with us, and earned their pin.
         </p>
       </header>
 
@@ -171,7 +171,7 @@ export default function HallOfFame() {
         <p className="hof-sub">The current long-haul champions.</p>
         {ranked.length === 0 ? (
           <p className="hof-empty">
-            No champions yet — the leaderboard is wide open.
+            No champions yet. The leaderboard is wide open.
           </p>
         ) : (
           <ol className="hof-board">
@@ -258,7 +258,7 @@ export default function HallOfFame() {
         {status === "confirm" && pending && (
           <div className="hof-confirm" role="dialog" aria-label="Confirm your entry">
             <p>
-              We found <b>{pending.displayName}</b> — that&apos;s{" "}
+              We found <b>{pending.displayName}</b>,{" "}
               <b>{fmtMiles(pending.miles)}</b> from Chicago. Look right?
             </p>
             <div className="hof-confirm-actions">
@@ -279,7 +279,7 @@ export default function HallOfFame() {
           </div>
         )}
         <p className="hof-note">
-          Entries are saved on this device for now — a shared,
+          Entries are saved on this device for now. A shared,
           everybody-sees-everybody board is coming.
         </p>
       </section>
@@ -288,7 +288,7 @@ export default function HallOfFame() {
         <h2>Every legend</h2>
         {newest.length === 0 ? (
           <p className="hof-empty">
-            The wall is bare and the map is blank. Fix that — add yourself
+            The wall is bare and the map is blank. Fix that: add yourself
             above.
           </p>
         ) : (
