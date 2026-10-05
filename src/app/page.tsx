@@ -6,8 +6,8 @@ const display = Fraunces({ subsets: ["latin"], weight: ["900"] });
 const body = Karla({ subsets: ["latin"], weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "6th Annual Arbor Day | arborday.beer",
-  description: "Plant a tree. Raise a glass. Friday, April 30, 2027. Venue to be announced.",
+  title: "6th Annual Arbor Day",
+  description: "Plant a tree. Raise a glass. Friday, April 30, 2027. Venue to be Announced.",
 };
 
 const leaves = ["🍃", "🍂", "🍃", "🍂", "🍃", "🍂", "🍃", "🍂"];

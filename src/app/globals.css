@@ -7,7 +7,7 @@ body{margin:0;background:var(--forest);color:var(--cream)}
   background:radial-gradient(circle at 50% 0%,#24502f 0,var(--forest) 65%)}
 .kicker{margin:0;letter-spacing:.25em;text-transform:uppercase;font-weight:700;color:var(--leaf);font-size:.9rem}
 h1{margin:0;line-height:.9;display:flex;flex-direction:column;align-items:center;letter-spacing:-.02em}
-.six{font-size:clamp(7rem,32vw,13rem);color:var(--amber);text-shadow:0 .05em 0 #a8741a}
+.six{font-size:clamp(7rem,32vw,13rem);color:var(--amber);text-shadow:0 .015em 0 #a8741a}
 .six sup{font-size:.35em;vertical-align:top;position:relative;top:.25em;margin-left:.04em}
 .annual{font-size:clamp(1.6rem,7vw,3rem);text-transform:uppercase;letter-spacing:.18em;margin-top:-.3em}
 .title{font-size:clamp(3rem,13vw,6rem);color:var(--cream)}
