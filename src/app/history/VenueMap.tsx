@@ -37,7 +37,7 @@ function loadLeaflet(): Promise<Leaflet> {
 
 /**
  * Interactive Chicago map with a numbered pin per past venue.
- * Pins come from the editions data — nothing is hardcoded here.
+ * Pins come from the editions data. Nothing is hardcoded here.
  */
 export default function VenueMap({ pins }: { pins: MapPin[] }) {
   const ref = useRef<HTMLDivElement>(null);

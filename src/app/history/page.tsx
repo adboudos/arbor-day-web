@@ -1,7 +1,7 @@
 import { editions } from "@/data/history";
 import VenueMap, { MapPin } from "./VenueMap";
 
-/** Pins are derived from the editions data — the map has no hardcoded venues. */
+/** Pins are derived from the editions data, so the map has no hardcoded venues. */
 const pins: MapPin[] = editions
   .filter((e) => e.lat !== undefined && e.lng !== undefined)
   .map((e) => ({
