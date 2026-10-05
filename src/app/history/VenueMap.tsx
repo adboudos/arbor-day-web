@@ -72,7 +72,11 @@ export default function VenueMap({ pins }: { pins: MapPin[] }) {
             .bindPopup(`<strong>${pin.year} &mdash; ${pin.venue}</strong><br />${pin.neighborhood}`);
           bounds.extend([pin.lat, pin.lng]);
         });
-        map.fitBounds(bounds.pad(0.4));
+        if (pins.length > 0) {
+          map.fitBounds(bounds.pad(0.4));
+        } else {
+          map.setView([41.88, -87.63], 11);
+        }
       })
       .catch(() => {
         // Map is decorative; the timeline below stands on its own.
