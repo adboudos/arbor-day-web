@@ -104,3 +104,18 @@ footer{margin-top:1rem;font-size:.9rem;opacity:.7}
 .hof-card-town{font-size:.9rem;color:var(--leaf);font-weight:700}
 .hof-card-meta{font-size:.8rem;opacity:.6;font-variant-numeric:tabular-nums}
 .hof-empty{opacity:.7;font-style:italic;text-align:center}
+
+/* ---- /war-room (classified) ---- */
+.war-classified{display:inline-block;margin:0;font-size:.75rem;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:var(--forest);background:var(--amber);border-radius:.4rem;padding:.35rem .8rem .35rem 1.1rem}
+.war-list{width:100%;display:flex;flex-direction:column;gap:1.25rem;margin-top:2rem}
+.war-card{background:var(--cream);color:var(--forest);border-radius:1rem;padding:1.4rem 1.6rem;box-shadow:0 .35rem 1.25rem rgba(0,0,0,.3);text-align:left}
+.war-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.war-card h2{margin:0;font-size:1.7rem;line-height:1.1;letter-spacing:-.01em}
+.war-location{margin:.25rem 0 0;font-weight:700;opacity:.6;font-size:.95rem}
+.war-status{flex-shrink:0;background:var(--forest);color:var(--amber);font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em;border-radius:2rem;padding:.35rem .8rem;white-space:nowrap}
+.war-blurb{margin:.9rem 0 0;font-size:1.02rem;line-height:1.5}
+.war-details{margin:1rem 0 0;display:grid;gap:.55rem}
+.war-details div{display:grid;grid-template-columns:5.2rem 1fr;gap:.7rem;align-items:baseline}
+.war-details dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;font-weight:900;opacity:.55}
+.war-details dd{margin:0;font-size:.95rem}
+.war-wink{font-style:italic;opacity:.75;margin:0 0 .8rem}
