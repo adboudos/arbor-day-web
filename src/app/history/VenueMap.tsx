@@ -73,7 +73,7 @@ export default function VenueMap({ pins }: { pins: MapPin[] }) {
           bounds.extend([pin.lat, pin.lng]);
         });
         if (pins.length > 0) {
-          map.fitBounds(bounds.pad(0.4));
+          map.fitBounds(bounds.pad(0.12));
         } else {
           map.setView([41.88, -87.63], 11);
         }
