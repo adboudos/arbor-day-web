@@ -1,78 +1,86 @@
-// Past Arbor Day editions. The /history timeline renders entirely from this
-// array — to add a new year, append one object here. Nothing about the graphic
-// itself is hardcoded in the page.
-
-export interface EditionStat {
-  label: string;
-  value: string;
+export interface TimelinePhoto {
+  src: string;
+  alt: string;
 }
 
 export interface Edition {
   year: number;
+  /** e.g. "Friday, April 28, 2023" */
+  date: string;
   venue: string;
   neighborhood: string;
-  date: string;
-  deal: string;
-  stats: EditionStat[];
-  highlights: string[];
-  /** The upcoming edition renders as a "to be continued" card. */
-  upcoming?: boolean;
+  address: string;
+  /** Map pin. Absent while the venue is still to be announced. */
+  lat?: number;
+  lng?: number;
+  photos: TimelinePhoto[];
 }
 
+/**
+ * Single source of truth for the /history timeline and venue map.
+ * To add a year: append an entry. Photos live in public/history/.
+ */
 export const editions: Edition[] = [
   {
     year: 2023,
+    date: "Friday, April 28, 2023",
     venue: "Kincade's",
     neighborhood: "Lincoln Park",
-    date: "Friday, April 28, 2023",
-    deal: "Minimum deal",
-    stats: [],
-    highlights: ["The one that started it all."],
+    address: "950 W Armitage Ave",
+    lat: 41.91838,
+    lng: -87.6529,
+    photos: [
+      { src: "/history/2023-kincades-1.jpg", alt: "The crew at the 2023 Arbor Day party at Kincade's" },
+      { src: "/history/2023-kincades-2.jpg", alt: "Daytime hang before the 2023 Arbor Day party" },
+    ],
   },
   {
     year: 2024,
+    date: "Friday, April 26, 2024",
     venue: "Sluggers",
     neighborhood: "Wrigleyville",
-    date: "Friday, April 26, 2024",
-    deal: "Back bar · ~$200 fee, believed waived",
-    stats: [],
-    highlights: ["Back-bar takeover in the heart of Wrigleyville."],
+    address: "3540 N Clark St",
+    lat: 41.94651,
+    lng: -87.65635,
+    photos: [
+      { src: "/history/2024-sluggers-1.jpg", alt: "Watching the NFL draft at the 2024 Arbor Day party at Sluggers" },
+    ],
   },
   {
     year: 2025,
+    date: "Friday, April 25, 2025",
     venue: "Easy Bar",
-    neighborhood: "Chicago",
-    date: "Friday, April 25, 2025 · 8:30pm",
-    deal: "Back Room · minimum deal",
-    stats: [{ label: "Guests", value: "50–60" }],
-    highlights: [
-      "Cash bar, individual tabs — no host tab.",
-      "Live band, seed packets, and party favors.",
-      "Guiding principles: getting drunk, celebrating trees, dressing formal.",
+    neighborhood: "East Village",
+    address: "1944 W Chicago Ave",
+    lat: 41.8962,
+    lng: -87.67635,
+    photos: [
+      { src: "/history/2025-easybar-1.jpg", alt: "Dressed up at the 2025 Arbor Day party at Easy Bar" },
+      { src: "/history/2025-easybar-2.jpg", alt: "Late night at the 2025 Arbor Day party at Easy Bar" },
     ],
   },
   {
     year: 2026,
-    venue: "Field House",
-    neighborhood: "Chicago",
     date: "Friday, April 24, 2026",
-    deal: "Full buyout · free",
-    stats: [
-      { label: "Headcount", value: "120" },
-      { label: "Invited", value: "104" },
-      { label: "Out-of-towners", value: "16" },
-      { label: "Groups", value: "32" },
+    venue: "Field House",
+    neighborhood: "Lincoln Park",
+    address: "2455 N Clark St",
+    lat: 41.92698,
+    lng: -87.64116,
+    photos: [
+      { src: "/history/2026-fieldhouse-1.jpg", alt: "The crew at the 2026 Arbor Day party at Field House" },
+      {
+        src: "/history/2026-fieldhouse-flyer.jpg",
+        alt: "Hand-drawn flyer for the 2026 party: 5th annual Arbor Day, April 24, the Fieldhouse, 2455 N Clark St",
+      },
     ],
-    highlights: ["Whole-bar buyout at zero cost.", "Biggest crowd yet."],
   },
   {
     year: 2027,
+    date: "Friday, April 30, 2027",
     venue: "To be announced",
-    neighborhood: "Chicago",
-    date: "Friday, April 30, 2027 · 9pm–midnight",
-    deal: "In the works",
-    stats: [],
-    highlights: [],
-    upcoming: true,
+    neighborhood: "",
+    address: "",
+    photos: [],
   },
 ];
