@@ -63,7 +63,7 @@ export default function VenueMap({ pins }: { pins: MapPin[] }) {
         pins.forEach((pin) => {
           const icon = L.divIcon({
             className: "venue-pin",
-            html: `<span>${String(pin.year).slice(2)}</span>`,
+            html: `<span>&#8217;${String(pin.year).slice(2)}</span>`,
             iconSize: [38, 38],
             iconAnchor: [19, 19],
           });
