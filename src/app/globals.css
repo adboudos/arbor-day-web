@@ -30,3 +30,41 @@ footer{margin-top:1rem;font-size:.9rem;opacity:.7}
 }
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg) translateX(40px)}}
 @keyframes sway{50%{transform:rotate(3deg)}}
+
+/* ---- /history timeline (rendered from src/data/history.ts) ---- */
+.history{max-width:64rem;margin:0 auto;padding:4rem 1.25rem 3rem;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.9rem;background:radial-gradient(circle at 50% 0%,#24502f 0,var(--forest) 70%);min-height:100vh}
+.history h1{font-size:clamp(2.6rem,9vw,4.5rem);color:var(--cream)}
+.timeline{list-style:none;margin:2.5rem 0 1rem;padding:0;width:100%;position:relative;display:flex;flex-direction:column;gap:2.75rem}
+.timeline::before{content:"";position:absolute;top:.5rem;bottom:.5rem;left:50%;width:3px;transform:translateX(-50%);border-radius:2px;background:linear-gradient(var(--leaf),rgba(143,207,106,.08))}
+.stop{position:relative;display:grid;grid-template-columns:1fr 6rem 1fr;align-items:start;width:100%}
+.stop:nth-child(odd) .card{grid-column:1;grid-row:1;margin-right:1.75rem}
+.stop:nth-child(odd) .node{grid-column:2;grid-row:1}
+.stop:nth-child(even) .card{grid-column:3;grid-row:1;margin-left:1.75rem}
+.stop:nth-child(even) .node{grid-column:2;grid-row:1}
+.node{display:flex;justify-content:center}
+.node span{display:flex;align-items:center;justify-content:center;width:6rem;height:6rem;border-radius:50%;background:var(--amber);color:var(--forest);font-size:1.4rem;position:relative;z-index:1;box-shadow:0 .2rem 0 #a8741a,0 .5rem 1.25rem rgba(0,0,0,.35)}
+.card{background:var(--cream);color:var(--forest);border-radius:1rem;padding:1.25rem 1.5rem;box-shadow:0 .35rem 1.25rem rgba(0,0,0,.3);text-align:left}
+.card .venue{margin:0;font-size:1.7rem;line-height:1.1}
+.card .where{margin:.3rem 0 0;font-size:.85rem;font-weight:700;opacity:.65}
+.card .deal{display:inline-block;margin:.8rem 0 0;padding:.32rem .85rem;border-radius:999px;background:var(--leaf);color:var(--forest);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
+.card .stats{margin:1.1rem 0 0;padding:0;display:flex;gap:1.25rem;flex-wrap:wrap}
+.card .stats div{display:flex;flex-direction:column;gap:.1rem}
+.card .stats dt{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;opacity:.6}
+.card .stats dd{margin:0;font-size:1.45rem;font-weight:900;font-variant-numeric:tabular-nums}
+.card .highlights{margin:1rem 0 0;padding:0;list-style:none;display:grid;gap:.45rem;font-size:.95rem}
+.card .highlights li{padding-left:1.6rem;position:relative}
+.card .highlights li::before{content:"🌿";position:absolute;left:0}
+.card .tocontinue{margin:1rem 0 0;font-weight:700}
+.card .tocontinue a{color:var(--forest)}
+.stop.upcoming .card{background:transparent;border:2px dashed var(--amber);color:var(--cream);box-shadow:none}
+.stop.upcoming .card .deal{background:var(--amber);color:var(--forest)}
+.stop.upcoming .card .tocontinue a{color:var(--amber)}
+.history-footer{margin-top:1.5rem;font-size:.95rem}
+.history-footer a{color:var(--leaf);font-weight:700}
+@media (max-width:46rem){
+  .timeline::before{left:1.5rem;transform:none}
+  .stop{grid-template-columns:3rem 1fr}
+  .stop .node{grid-column:1;grid-row:1}
+  .stop .card{grid-column:2;grid-row:1;margin:0 0 0 1.25rem}
+  .node span{width:3rem;height:3rem;font-size:.78rem}
+}
