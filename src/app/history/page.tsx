@@ -19,10 +19,10 @@ export default function HistoryPage() {
         <p className="history-kicker">
           <a href="/">&larr; arborday.beer</a>
         </p>
-        <h1>Six years of Arbor Day</h1>
+        <h1>Our history</h1>
         <p className="history-tagline">
           Every bar that&apos;s hosted the party, pinned on one map. The 2026
-          flyer calls that year the 5th annual &mdash; so it all started in 2022.
+          flyer calls that year the 5th annual, so it all started in 2022.
         </p>
       </header>
 
