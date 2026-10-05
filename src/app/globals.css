@@ -117,3 +117,8 @@ footer{margin-top:1rem;font-size:.9rem;opacity:.7}
 .war-details div{display:grid;grid-template-columns:5.2rem 1fr;gap:.7rem;align-items:baseline}
 .war-details dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;font-weight:900;opacity:.55}
 .war-details dd{margin:0;font-size:.95rem}
+
+/* ---- home nav ---- */
+.home-nav{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:center;flex-wrap:wrap;gap:.4rem 1.6rem;padding:calc(1rem + env(safe-area-inset-top,0px)) 1.25rem 1rem}
+.home-nav a{color:var(--cream);text-decoration:none;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;opacity:.85}
+.home-nav a:hover{color:var(--amber);opacity:1}
