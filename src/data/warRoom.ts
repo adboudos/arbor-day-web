@@ -12,7 +12,6 @@ export interface JokeVenue {
   lng: number;
   capacity: string;
   status: string;
-  blurb: string;
   pro: string;
   con: string;
 }
@@ -26,8 +25,6 @@ export const jokeVenues: JokeVenue[] = [
     lng: -3.5995,
     capacity: "68,456 (room to grow)",
     status: "Front-runner",
-    blurb:
-      "Big venue energy for a 120-person headcount. The acoustics would be wasted on us, but the photos would be incredible.",
     pro: "No drink minimum has been discussed. Or anything else. We have not called.",
     con: "4,200 miles from Lincoln Park. Attendees responsible for own flights.",
   },
@@ -39,23 +36,19 @@ export const jokeVenues: JokeVenue[] = [
     lng: -0.1276,
     capacity: "~80 (standing, probably)",
     status: "Under consideration",
-    blurb:
-      "A proper pub. Historic. They have been pouring since before Arbor Day was invented (1872, look it up).",
     pro: "Authenticity cannot be bought. It can, however, be flown to.",
     con: "Last tube home is midnight. Party ends at midnight. The math is unfortunate.",
   },
   {
-    id: "guangzhou",
-    name: "A Random Irish Pub",
+    id: "hooleys",
+    name: "Hooley's Irish Pub",
     location: "Guangzhou, China",
-    lat: 23.1291,
-    lng: 113.2644,
-    capacity: "Unknown. We will count chairs when we get there.",
+    lat: 23.1296,
+    lng: 113.3215,
+    capacity: "Three floors",
     status: "Scouting trip pending",
-    blurb:
-      "Which one? Unclear. There is at least one, and that is enough to begin the process.",
-    pro: "Nobody in the group can veto a bar they cannot find on Google Maps.",
-    con: "The 13-hour time difference makes the countdown timer confusing.",
+    pro: "A legitimate operation. Live music nightly, open until 2am, Guinness on tap.",
+    con: "Level 2 has a RMB 500 minimum spend. The host fund is $200 each.",
   },
   {
     id: "nmh",
@@ -65,8 +58,6 @@ export const jokeVenues: JokeVenue[] = [
     lng: -87.6217,
     capacity: "Several waiting rooms",
     status: "Dark horse",
-    blurb:
-      "Hear us out. Centrally located, open late, and the valet situation is excellent.",
     pro: "In-network for most guests. Extremely clean. Great lighting.",
     con: "BYOB policy is unclear and the staff seem stressed when asked.",
   },
@@ -78,10 +69,8 @@ export const jokeVenues: JokeVenue[] = [
     lng: -62.2159,
     capacity: "Unlimited",
     status: "On theme",
-    blurb:
-      "More trees than any venue in the history of the party. Thematically unbeatable.",
     pro: "The decor is handled. The trees are already there.",
-    con: "Mosquitoes do not respect a blazer. Formal dress code difficult to enforce.",
+    con: "Open-container laws are unclear and the venue has no walls.",
   },
   {
     id: "baobab",
@@ -91,9 +80,7 @@ export const jokeVenues: JokeVenue[] = [
     lng: 30.1079,
     capacity: "One very large tree",
     status: "Sentimental favorite",
-    blurb:
-      "A bar inside a 6,000-year-old baobab tree. It is literally Arbor Day in bar form.",
-    pro: "You cannot get more on theme than drinking inside a tree.",
+    pro: "A bar inside a 6,000-year-old baobab tree.",
     con: "The tree is older than the concept of bars. It has seen things.",
   },
 ];

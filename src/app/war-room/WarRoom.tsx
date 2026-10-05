@@ -33,7 +33,6 @@ export default function WarRoom() {
               </div>
               <span className="war-status">{v.status}</span>
             </div>
-            <p className="war-blurb">{v.blurb}</p>
             <dl className="war-details">
               <div>
                 <dt>Capacity</dt>
@@ -53,9 +52,6 @@ export default function WarRoom() {
       </div>
 
       <footer className="history-footer">
-        <p className="war-wink">
-          None of this is real. Please do not book flights.
-        </p>
         <Link href="/">&larr; Back to the countdown</Link>
       </footer>
     </main>
