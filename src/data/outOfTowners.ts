@@ -5,9 +5,8 @@
  * geocoded via Nominatim (OpenStreetMap, no API key), Illinois entries are
  * rejected, and distance from Chicago is computed with haversine.
  *
- * Persistence is device-local (localStorage) for now. `loadVisitors` /
- * `saveVisitors` are the seam: swap them for API calls when a backend exists
- * and every entry becomes visible to everyone.
+ * Visitors live in Supabase (see @/lib/supabase); every entry is visible
+ * to everyone.
  */
 
 export interface OutOfTowner {
@@ -30,11 +29,6 @@ export const PARTY_YEARS = [2022, 2023, 2024, 2025, 2026, 2027];
 
 /** Rough downtown Chicago, the party's home turf. */
 export const CHICAGO = { lat: 41.8781, lng: -87.6298 };
-
-const STORAGE_KEY = "arbor-hall-of-fame";
-
-/** Curated seed entries live here. Quinn can backfill real past visitors. */
-export const seedVisitors: OutOfTowner[] = [];
 
 export function haversineMiles(
   aLat: number,
@@ -134,28 +128,6 @@ export function looksLikeIllinois(input: string): boolean {
   return /\billinois\b/i.test(input) || /,\s*il\b/i.test(input);
 }
 
-export function loadVisitors(): OutOfTowner[] {
-  if (typeof window === "undefined") return [...seedVisitors];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [...seedVisitors];
-    const parsed = JSON.parse(raw) as OutOfTowner[];
-    return [...seedVisitors, ...parsed.filter((v) => v && v.id && v.name)];
-  } catch {
-    return [...seedVisitors];
-  }
-}
-
-export function saveVisitors(visitors: OutOfTowner[]): void {
-  if (typeof window === "undefined") return;
-  const seedIds = new Set(seedVisitors.map((v) => v.id));
-  const local = visitors.filter((v) => !seedIds.has(v.id));
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
-  } catch {
-    // Storage full or unavailable: the in-memory list still works for the session.
-  }
-}
 
 export function isDuplicate(
   visitors: OutOfTowner[],

@@ -1,5 +1,6 @@
 import VenueMap, { MapPin } from "./VenueMap";
 import { fetchEditions } from "@/lib/supabase";
+import SiteNav from "@/components/SiteNav";
 
 /** Revalidate the timeline from Supabase hourly. */
 export const revalidate = 3600;
@@ -20,6 +21,7 @@ export default async function HistoryPage() {
 
   return (
     <main className="history-page">
+      <SiteNav current="/history" />
       <header className="history-hero">
         <p className="history-kicker">
           <a href="/">&larr; arborday.beer</a>

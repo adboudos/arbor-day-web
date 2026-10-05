@@ -1,20 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import VisitorMap from "./VisitorMap";
+import SiteNav from "@/components/SiteNav";
 import {
   AWARDS,
   PARTY_YEARS,
   fmtMiles,
   geocodeHometown,
   isDuplicate,
-  loadVisitors,
   looksLikeIllinois,
   milesToChicago,
-  saveVisitors,
   type OutOfTowner,
 } from "@/data/outOfTowners";
+import {
+  createVisitor as createVisitorRemote,
+  fetchVisitors,
+  type VisitorRow,
+} from "@/lib/supabase";
 
 const ILLINOIS_REJECT =
   "Whoa there, local. Illinois doesn't count. This hall is for travelers. (We love you anyway. You just don't get a pin.)";
@@ -31,14 +35,47 @@ interface PendingEntry {
 
 type Status = "idle" | "geocoding" | "confirm";
 
+function toVisitor(row: VisitorRow): OutOfTowner {
+  return {
+    id: row.id,
+    name: row.name,
+    year: row.year,
+    hometown: row.hometown,
+    resolved: row.resolved,
+    lat: row.lat,
+    lng: row.lng,
+    miles: row.miles,
+    addedAt: row.created_at,
+  };
+}
+
 export default function HallOfFame() {
-  const [visitors, setVisitors] = useState<OutOfTowner[]>(() => loadVisitors());
+  const [visitors, setVisitors] = useState<OutOfTowner[]>([]);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [year, setYear] = useState(2027);
   const [hometown, setHometown] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingEntry | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchVisitors()
+      .then((rows) => {
+        if (!cancelled) {
+          setVisitors(rows.map(toVisitor));
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const ranked = useMemo(
     () => [...visitors].sort((a, b) => b.miles - a.miles),
@@ -108,34 +145,39 @@ export default function HallOfFame() {
     }
   }
 
-  function confirmEntry() {
-    if (!pending) return;
-    const entry: OutOfTowner = {
-      id:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : Date.now().toString(36),
-      name: pending.name,
-      year: pending.year,
-      hometown: pending.hometown,
-      resolved: pending.displayName,
-      lat: pending.lat,
-      lng: pending.lng,
-      miles: pending.miles,
-      addedAt: new Date().toISOString(),
-    };
-    const next = [entry, ...visitors];
-    setVisitors(next);
-    saveVisitors(next);
+  async function confirmEntry() {
+    if (!pending || saving) return;
+    setSaving(true);
+    try {
+      const row = await createVisitorRemote({
+        name: pending.name,
+        year: pending.year,
+        hometown: pending.hometown,
+        resolved: pending.displayName,
+        lat: pending.lat,
+        lng: pending.lng,
+        miles: pending.miles,
+      });
+      setVisitors((prev) => [toVisitor(row), ...prev]);
+    } catch {
+      setError(
+        "The wall would not take your entry. You may already be on it for that year."
+      );
+      setStatus("idle");
+      setSaving(false);
+      return;
+    }
     setPending(null);
     setName("");
     setHometown("");
     setYear(2027);
     setStatus("idle");
+    setSaving(false);
   }
 
   return (
     <main className="history-page">
+      <SiteNav current="/hall-of-fame" />
       <header className="history-hero">
         <p className="history-kicker">
           <Link href="/">&larr; arborday.beer</Link>
@@ -169,7 +211,9 @@ export default function HallOfFame() {
       <section className="hof-section" aria-label="Furthest traveled">
         <h2>Furthest traveled</h2>
         <p className="hof-sub">The current long-haul champions.</p>
-        {ranked.length === 0 ? (
+        {loading ? (
+          <p className="hof-empty">Polishing the trophies&hellip;</p>
+        ) : ranked.length === 0 ? (
           <p className="hof-empty">
             No champions yet. The leaderboard is wide open.
           </p>
@@ -262,8 +306,13 @@ export default function HallOfFame() {
               <b>{fmtMiles(pending.miles)}</b> from Chicago. Look right?
             </p>
             <div className="hof-confirm-actions">
-              <button type="button" className="hof-btn" onClick={confirmEntry}>
-                Yep, that&apos;s me
+              <button
+                type="button"
+                className="hof-btn"
+                onClick={confirmEntry}
+                disabled={saving}
+              >
+                {saving ? "Adding you..." : "Yep, that&apos;s me"}
               </button>
               <button
                 type="button"
@@ -279,14 +328,15 @@ export default function HallOfFame() {
           </div>
         )}
         <p className="hof-note">
-          Entries are saved on this device for now. A shared,
-          everybody-sees-everybody board is coming.
+          Entries are shared with everyone. Illinois need not apply.
         </p>
       </section>
 
       <section className="hof-section" aria-label="All visitors">
         <h2>Every legend</h2>
-        {newest.length === 0 ? (
+        {loading ? (
+          <p className="hof-empty">Polishing the trophies&hellip;</p>
+        ) : newest.length === 0 ? (
           <p className="hof-empty">
             The wall is bare and the map is blank. Fix that: add yourself
             above.
