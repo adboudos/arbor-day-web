@@ -21,7 +21,6 @@ export default async function HistoryPage() {
 
   return (
     <main className="history-page">
-      <SiteNav current="/history" />
       <header className="history-hero">
         <p className="history-kicker">
           <a href="/">&larr; arborday.beer</a>

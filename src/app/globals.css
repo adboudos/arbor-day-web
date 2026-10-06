@@ -1,3 +1,4 @@
+   @import "tailwindcss";
 :root{--forest:#14301f;--cream:#f6f0dc;--amber:#f2b632;--leaf:#8fcf6a}
 *{box-sizing:border-box}
 html{background:var(--forest);scroll-padding-top:env(safe-area-inset-top,0px)}

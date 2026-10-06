@@ -17,16 +17,6 @@ const leaves = ["🍃", "🍂", "🍃", "🍂", "🍃", "🍂", "🍃", "🍂"];
 export default function Home() {
   return (
     <main className={`hero ${body.className}`}>
-      <nav className="home-nav" aria-label="Site">
-        <Link href="/history">Past Parties</Link>
-        <Link href="/hall-of-fame">Hall of Fame</Link>
-        <Link href="/ideas">Ideas &amp; Requests</Link>
-        <Link href="/photo-wall">Photo Wall</Link>
-        <Link href="/war-room">War Room</Link>
-        <a className="rsvp-btn" href={PARTIFUL_URL} target="_blank" rel="noopener">
-          RSVP
-        </a>
-      </nav>
       <div className="leaves" aria-hidden="true">
         {leaves.map((l, i) => (
           <span key={i} style={{ ["--i" as string]: i }}>{l}</span>

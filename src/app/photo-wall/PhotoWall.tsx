@@ -98,7 +98,6 @@ export default function PhotoWall() {
 
   return (
     <main className="history-page">
-      <SiteNav current="/photo-wall" />
       <header className="history-hero">
         <p className="history-kicker">
           <Link href="/">&larr; arborday.beer</Link>

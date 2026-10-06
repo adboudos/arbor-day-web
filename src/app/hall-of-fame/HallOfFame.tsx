@@ -177,7 +177,6 @@ export default function HallOfFame() {
 
   return (
     <main className="history-page">
-      <SiteNav current="/hall-of-fame" />
       <header className="history-hero">
         <p className="history-kicker">
           <Link href="/">&larr; arborday.beer</Link>
