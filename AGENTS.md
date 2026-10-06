@@ -10,3 +10,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## House copy rules
 - Never use em dashes (U+2014) anywhere on the site: not in visible copy, metadata/titles, or code comments. Use commas, periods, or colons instead, restructuring the sentence when needed.
+
+## House layout rules
+- Always optimize for iPhone. Design mobile-first and verify every page at a 390px viewport: no horizontal overflow, tap targets at least 44px, type readable without zooming, and no overlapping or cut-off content.
