@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { MAP_FRAME_CLASS, addTiles, esc, loadLeaflet, pinIcon, type Leaflet } from "@/lib/leaflet";
 
 export interface MapPin {
   year: number;
@@ -8,31 +9,6 @@ export interface MapPin {
   neighborhood: string;
   lat: number;
   lng: number;
-}
-
-const LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-const LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-
-type Leaflet = any;
-
-function loadLeaflet(): Promise<Leaflet> {
-  return new Promise((resolve, reject) => {
-    const w = window as any;
-    if (w.L) {
-      resolve(w.L);
-      return;
-    }
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = LEAFLET_CSS;
-    document.head.appendChild(link);
-    const script = document.createElement("script");
-    script.src = LEAFLET_JS;
-    script.async = true;
-    script.onload = () => resolve((window as any).L);
-    script.onerror = () => reject(new Error("Leaflet failed to load"));
-    document.body.appendChild(script);
-  });
 }
 
 /**
@@ -50,26 +26,16 @@ export default function VenueMap({ pins }: { pins: MapPin[] }) {
       .then((L: Leaflet) => {
         if (cancelled || !ref.current) return;
         // Guard against double-init in React StrictMode.
-        if ((ref.current as any)._leaflet_id) return;
+        if ((ref.current as unknown as { _leaflet_id?: number })._leaflet_id) return;
 
         map = L.map(ref.current, { scrollWheelZoom: false });
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+        addTiles(L, map);
 
         const bounds = L.latLngBounds([]);
         pins.forEach((pin) => {
-          const icon = L.divIcon({
-            className: "venue-pin",
-            html: `<span>&#8217;${String(pin.year).slice(2)}</span>`,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-          });
-          L.marker([pin.lat, pin.lng], { icon })
+          L.marker([pin.lat, pin.lng], { icon: pinIcon(L, `&#8217;${String(pin.year).slice(2)}`) })
             .addTo(map)
-            .bindPopup(`<strong>${pin.year} &mdash; ${pin.venue}</strong><br />${pin.neighborhood}`);
+            .bindPopup(`<strong>${pin.year}: ${esc(pin.venue)}</strong><br />${esc(pin.neighborhood)}`);
           bounds.extend([pin.lat, pin.lng]);
         });
         if (pins.length > 0) {
@@ -91,7 +57,7 @@ export default function VenueMap({ pins }: { pins: MapPin[] }) {
   return (
     <div
       ref={ref}
-      className="venue-map"
+      className={MAP_FRAME_CLASS}
       role="img"
       aria-label="Map of Chicago with pins for every past Arbor Day party venue"
     />

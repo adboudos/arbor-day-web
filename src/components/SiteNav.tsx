@@ -14,7 +14,7 @@ const LINKS = [
 ];
 
 const focusRing =
-  "focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[var(--amber)] focus-visible:rounded";
+  "focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-amber focus-visible:rounded";
 
 /** Top bar: "Arbor Day" home link on the left, hamburger dropdown on the right. */
 export default function SiteNav({ current }: { current?: string }) {
@@ -40,18 +40,18 @@ export default function SiteNav({ current }: { current?: string }) {
     };
   }, [open]);
 
-  const bar = "block h-[3px] w-6 rounded-sm bg-[var(--cream)] transition-all duration-200";
+  const bar = "block h-[3px] w-6 rounded-sm bg-cream transition-all duration-200";
 
   return (
     <nav
       ref={navRef}
       aria-label="Site"
-      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-[var(--cream)]/10 bg-[var(--forest)]/90 px-5 pb-[0.9rem] pt-[calc(0.9rem+env(safe-area-inset-top,0px))] text-[var(--cream)] backdrop-blur"
+      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-cream/10 bg-forest/90 px-5 pb-[0.9rem] pt-[calc(0.9rem+env(safe-area-inset-top,0px))] text-cream backdrop-blur"
     >
       <Link
         href="/"
         onClick={() => setOpen(false)}
-        className={`text-xl font-extrabold text-[var(--amber)] no-underline ${focusRing}`}
+        className={`text-xl font-extrabold text-amber no-underline ${focusRing}`}
       >
         Arbor Day
       </Link>
@@ -72,7 +72,7 @@ export default function SiteNav({ current }: { current?: string }) {
       {open && (
         <ul
           id="site-nav-menu"
-          className="absolute right-5 top-full m-0 min-w-52 list-none rounded-xl bg-[var(--cream)] p-1.5 text-[var(--forest)] shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+          className="absolute right-5 top-full m-0 min-w-52 list-none rounded-xl bg-cream p-1.5 text-forest shadow-menu"
         >
           {LINKS.map((l) => {
             const isActive = l.href === active;
@@ -84,8 +84,8 @@ export default function SiteNav({ current }: { current?: string }) {
                   onClick={() => setOpen(false)}
                   className={`block rounded-lg px-3.5 py-3 font-bold no-underline ${
                     isActive
-                      ? "bg-[var(--forest)] text-[var(--cream)]"
-                      : "hover:bg-[var(--forest)]/10 focus-visible:bg-[var(--forest)]/10"
+                      ? "bg-forest text-cream"
+                      : "hover:bg-forest/10 focus-visible:bg-forest/10"
                   }`}
                 >
                   {l.label}

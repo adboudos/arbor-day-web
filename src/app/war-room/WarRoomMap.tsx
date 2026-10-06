@@ -1,16 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { loadLeaflet, type Leaflet } from "@/lib/leaflet";
+import { MAP_FRAME_CLASS, addTiles, esc, loadLeaflet, pinIcon, type Leaflet } from "@/lib/leaflet";
 import { jokeVenues } from "@/data/warRoom";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /** World map with a pin for every venue under "active consideration". */
 export default function WarRoomMap() {
@@ -24,20 +16,10 @@ export default function WarRoomMap() {
         if ((ref.current as unknown as { _leaflet_id?: number })._leaflet_id)
           return;
         const map = L.map(ref.current, { scrollWheelZoom: false });
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+        addTiles(L, map);
         const bounds = L.latLngBounds([]);
         jokeVenues.forEach((v) => {
-          const icon = L.divIcon({
-            className: "venue-pin",
-            html: `<span>&#127867;</span>`,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-          });
-          L.marker([v.lat, v.lng], { icon })
+          L.marker([v.lat, v.lng], { icon: pinIcon(L, "&#127867;") })
             .addTo(map)
             .bindPopup(
               `<strong>${esc(v.name)}</strong><br />${esc(v.location)}`,
@@ -57,7 +39,7 @@ export default function WarRoomMap() {
   return (
     <div
       ref={ref}
-      className="venue-map"
+      className={MAP_FRAME_CLASS}
       role="img"
       aria-label="World map with pins for every venue under consideration"
     />

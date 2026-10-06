@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import VisitorMap from "./VisitorMap";
-import SiteNav from "@/components/SiteNav";
+import {
+  Button,
+  EmptyNote,
+  ErrorNote,
+  Field,
+  FootNote,
+  PageShell,
+  Section,
+  Stat,
+  formPanel,
+  inputClass,
+} from "@/components/ui";
 import {
   AWARDS,
   PARTY_YEARS,
@@ -176,62 +186,52 @@ export default function HallOfFame() {
   }
 
   return (
-    <main className="history-page">
-      <header className="history-hero">
-        <p className="history-kicker">
-          <Link href="/">&larr; arborday.beer</Link>
-        </p>
-        <h1>Out-of-Towner Hall of Fame</h1>
-        <p className="history-tagline">
+    <PageShell
+      title="Out-of-Towner Hall of Fame"
+      tagline={
+        <>
           They came. They saw. They raised a glass. These legends traveled from
           beyond Illinois to celebrate trees with us, and earned their pin.
-        </p>
-      </header>
-
-      <div className="hof-stats" aria-label="Hall of fame stats">
-        <div className="hof-stat">
-          <b>{stats.count}</b>
-          <span>legends inducted</span>
-        </div>
-        <div className="hof-stat">
-          <b>{Math.round(stats.miles).toLocaleString("en-US")}</b>
-          <span>total miles traveled</span>
-        </div>
-        <div className="hof-stat">
-          <b>{stats.places}</b>
-          <span>hometowns represented</span>
-        </div>
+        </>
+      }
+    >
+      <div className="mb-6 flex w-full flex-wrap justify-center gap-2.75" aria-label="Hall of fame stats">
+        <Stat value={stats.count} label="legends inducted" />
+        <Stat value={Math.round(stats.miles).toLocaleString("en-US")} label="total miles traveled" />
+        <Stat value={stats.places} label="hometowns represented" />
       </div>
 
-      <section className="history-map-section" aria-label="Hometown map">
+      <section className="mb-4 w-full" aria-label="Hometown map">
         <VisitorMap visitors={visitors} />
       </section>
 
-      <section className="hof-section" aria-label="Furthest traveled">
-        <h2>Furthest traveled</h2>
-        <p className="hof-sub">The current long-haul champions.</p>
+      <Section label="Furthest traveled" title="Furthest traveled" sub="The current long-haul champions.">
         {loading ? (
-          <p className="hof-empty">Polishing the trophies&hellip;</p>
+          <EmptyNote>Polishing the trophies&hellip;</EmptyNote>
         ) : ranked.length === 0 ? (
-          <p className="hof-empty">
-            No champions yet. The leaderboard is wide open.
-          </p>
+          <EmptyNote>No champions yet. The leaderboard is wide open.</EmptyNote>
         ) : (
-          <ol className="hof-board">
+          <ol className="flex w-full flex-col gap-2.5">
             {ranked.slice(0, 5).map((v, i) => {
               const award = AWARDS[i];
               return (
-                <li key={v.id} className="hof-row">
-                  <span className="hof-rank">#{i + 1}</span>
-                  <span className="hof-who">
-                    <b>{v.name}</b>
-                    <span>
+                <li
+                  key={v.id}
+                  className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 rounded-xl bg-cream px-4 py-3.25 text-forest shadow-row"
+                >
+                  <span className="min-w-9 text-xl font-black text-amber-dark">#{i + 1}</span>
+                  <span className="flex min-w-0 flex-1 basis-40 flex-col">
+                    <b className="text-base">{v.name}</b>
+                    <span className="truncate text-sm opacity-65">
                       {v.resolved} &middot; &#8217;{String(v.year).slice(2)}
                     </span>
                   </span>
-                  <span className="hof-miles">{fmtMiles(v.miles)}</span>
+                  <span className="font-black whitespace-nowrap tabular-nums">{fmtMiles(v.miles)}</span>
                   {award && (
-                    <span className="hof-award" title={award.title}>
+                    <span
+                      className="rounded-full bg-forest px-2.75 py-1.25 text-xs font-bold whitespace-nowrap text-amber max-sm:ml-12.5"
+                      title={award.title}
+                    >
                       {award.emoji} {award.title}
                     </span>
                   )}
@@ -240,17 +240,15 @@ export default function HallOfFame() {
             })}
           </ol>
         )}
-      </section>
+      </Section>
 
-      <section className="hof-section" aria-label="Add yourself">
-        <h2>Claim your spot</h2>
-        <p className="hof-sub">
-          Came from out of town? Add your name, the year, and your hometown.
-          Illinois need not apply.
-        </p>
-        <form className="hof-form" onSubmit={handleSubmit}>
-          <label className="hof-field">
-            <span>Name</span>
+      <Section
+        label="Add yourself"
+        title="Claim your spot"
+        sub="Came from out of town? Add your name, the year, and your hometown. Illinois need not apply."
+      >
+        <form className={`${formPanel} max-w-104`} onSubmit={handleSubmit}>
+          <Field label="Name">
             <input
               type="text"
               value={name}
@@ -258,13 +256,14 @@ export default function HallOfFame() {
               placeholder="Your name"
               maxLength={60}
               autoComplete="name"
+              className={inputClass}
             />
-          </label>
-          <label className="hof-field">
-            <span>Year you came</span>
+          </Field>
+          <Field label="Year you came">
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
+              className={inputClass}
             >
               {PARTY_YEARS.map((y) => (
                 <option key={y} value={y}>
@@ -272,9 +271,8 @@ export default function HallOfFame() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="hof-field">
-            <span>Hometown</span>
+          </Field>
+          <Field label="Hometown">
             <input
               type="text"
               value={hometown}
@@ -282,82 +280,72 @@ export default function HallOfFame() {
               placeholder="City, State (or Country)"
               maxLength={80}
               autoComplete="off"
+              className={inputClass}
             />
-          </label>
-          <button
-            type="submit"
-            className="hof-btn"
-            disabled={status === "geocoding"}
-          >
+          </Field>
+          <Button type="submit" disabled={status === "geocoding"}>
             {status === "geocoding" ? "Finding your hometown…" : "Add me to the wall"}
-          </button>
-          {error && (
-            <p className="hof-error" role="alert">
-              {error}
-            </p>
-          )}
+          </Button>
+          {error && <ErrorNote>{error}</ErrorNote>}
         </form>
 
         {status === "confirm" && pending && (
-          <div className="hof-confirm" role="dialog" aria-label="Confirm your entry">
-            <p>
+          <div
+            className="mt-4 w-full max-w-104 rounded-2xl bg-cream px-5 py-4.5 text-center text-forest"
+            role="dialog"
+            aria-label="Confirm your entry"
+          >
+            <p className="mb-3.5">
               We found <b>{pending.displayName}</b>,{" "}
               <b>{fmtMiles(pending.miles)}</b> from Chicago. Look right?
             </p>
-            <div className="hof-confirm-actions">
-              <button
+            <div className="flex flex-wrap justify-center gap-2.5">
+              <Button type="button" onClick={confirmEntry} disabled={saving}>
+                {saving ? "Adding you..." : "Yep, that's me"}
+              </Button>
+              <Button
                 type="button"
-                className="hof-btn"
-                onClick={confirmEntry}
-                disabled={saving}
-              >
-                {saving ? "Adding you..." : "Yep, that&apos;s me"}
-              </button>
-              <button
-                type="button"
-                className="hof-btn hof-btn-ghost"
+                variant="ghostOnCream"
                 onClick={() => {
                   setPending(null);
                   setStatus("idle");
                 }}
               >
                 Nope, try again
-              </button>
+              </Button>
             </div>
           </div>
         )}
-        <p className="hof-note">
+        <FootNote className="mt-3.5 max-w-104">
           Entries are shared with everyone. Illinois need not apply.
-        </p>
-      </section>
+        </FootNote>
+      </Section>
 
-      <section className="hof-section" aria-label="All visitors">
-        <h2>Every legend</h2>
+      <Section label="All visitors" title="Every legend">
         {loading ? (
-          <p className="hof-empty">Polishing the trophies&hellip;</p>
+          <EmptyNote>Polishing the trophies&hellip;</EmptyNote>
         ) : newest.length === 0 ? (
-          <p className="hof-empty">
+          <EmptyNote>
             The wall is bare and the map is blank. Fix that: add yourself
             above.
-          </p>
+          </EmptyNote>
         ) : (
-          <div className="hof-grid">
+          <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2.75">
             {newest.map((v) => (
-              <article key={v.id} className="hof-card">
-                <b>{v.name}</b>
-                <span className="hof-card-town">{v.resolved}</span>
-                <span className="hof-card-meta">
+              <article
+                key={v.id}
+                className="flex flex-col gap-0.5 rounded-xl border border-cream/16 bg-cream/7 px-4 py-3.5"
+              >
+                <b className="text-base text-cream">{v.name}</b>
+                <span className="text-sm font-bold text-leaf">{v.resolved}</span>
+                <span className="text-xs tabular-nums opacity-60">
                   &#8217;{String(v.year).slice(2)} &middot; {fmtMiles(v.miles)}
                 </span>
               </article>
             ))}
           </div>
         )}
-      </section>
-
-      <footer className="history-footer">
-        <Link href="/">&larr; Back to the countdown</Link>
-      </footer>
-    </main>
+      </Section>
+    </PageShell>
   );
 }

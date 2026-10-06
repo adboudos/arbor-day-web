@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import styles from "./ideas.module.css";
-import SiteNav from "@/components/SiteNav";
+import {
+  Button,
+  EmptyNote,
+  ErrorNote,
+  FootNote,
+  PageShell,
+  Section,
+  Stat,
+  formPanel,
+  inputClass,
+} from "@/components/ui";
 import {
   CATEGORIES,
   CATEGORY_ORDER,
@@ -27,9 +35,9 @@ type Filter = "all" | IdeaCategory;
 type Sort = "top" | "newest";
 
 const badgeClass: Record<IdeaCategory, string> = {
-  feedback: styles.badgeFeedback,
-  idea: styles.badgeIdea,
-  request: styles.badgeRequest,
+  feedback: "bg-leaf text-forest",
+  idea: "bg-amber text-forest",
+  request: "bg-clay text-[#fdf6ec]",
 };
 
 function formatDate(iso: string): string {
@@ -186,46 +194,46 @@ export default function IdeasBoard() {
     }
   }
 
+  function voteButton(item: BoardItem, dir: 1 | -1) {
+    const active = votes[item.id] === dir;
+    return (
+      <button
+        type="button"
+        aria-label={`${dir === 1 ? "Upvote" : "Downvote"}: ${item.text.slice(0, 60)}`}
+        aria-pressed={active}
+        className={`flex h-7 w-9 cursor-pointer items-center justify-center rounded-full border text-xs leading-none text-forest ${
+          active ? "border-amber bg-amber font-black" : "border-forest/20 bg-forest/8"
+        }`}
+        onClick={() => vote(dir, item.id)}
+      >
+        {dir === 1 ? "▲" : "▼"}
+      </button>
+    );
+  }
+
   const emptyForFilter =
     filter === "all"
       ? "The suggestion box is empty. Suspiciously quiet."
       : `No ${CATEGORIES[filter].label.toLowerCase()} yet. Be the first. The box is right up there.`;
 
   return (
-    <main className="history-page">
-      <header className="history-hero">
-        <p className="history-kicker">
-          <Link href="/">&larr; arborday.beer</Link>
-        </p>
-        <h1>Ideas &amp; Requests</h1>
-        <p className="history-tagline">
-          The party is a group project. Tell us what to keep, what to fix, and
-          what to try, then vote the best to the top.
-        </p>
-      </header>
-
-      <div className={styles.stats} aria-label="Board stats">
-        <div className={styles.stat}>
-          <b>{stats.posts}</b>
-          <span>posts</span>
-        </div>
-        <div className={styles.stat}>
-          <b>{stats.totalUps.toLocaleString("en-US")}</b>
-          <span>upvotes cast</span>
-        </div>
-        <div className={styles.stat}>
-          <b>{stats.leading}</b>
-          <span>leading category</span>
-        </div>
+    <PageShell
+      title="Ideas & Requests"
+      tagline="The party is a group project. Tell us what to keep, what to fix, and what to try, then vote the best to the top."
+    >
+      <div className="mb-2 flex w-full flex-wrap justify-center gap-2.75" aria-label="Board stats">
+        <Stat value={stats.posts} label="posts" />
+        <Stat value={stats.totalUps.toLocaleString("en-US")} label="upvotes cast" />
+        <Stat value={stats.leading} label="leading category" />
       </div>
 
-      <section className={styles.section} aria-label="Submit an idea">
-        <h2>Drop it in the box</h2>
-        <p className={styles.sub}>
-          One box. Three flavors. Keep it short, keep it fun.
-        </p>
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.seg} role="radiogroup" aria-label="Category">
+      <Section
+        label="Submit an idea"
+        title="Drop it in the box"
+        sub="One box. Three flavors. Keep it short, keep it fun."
+      >
+        <form className={`${formPanel} max-w-120`} onSubmit={handleSubmit}>
+          <div className="flex gap-2" role="radiogroup" aria-label="Category">
             {CATEGORY_ORDER.map((c) => (
               <button
                 key={c}
@@ -233,14 +241,16 @@ export default function IdeasBoard() {
                 role="radio"
                 aria-checked={category === c}
                 title={CATEGORIES[c].tagline}
-                className={`${styles.segBtn} ${category === c ? styles.segBtnActive : ""}`}
+                className={`flex-1 cursor-pointer rounded-full border px-2 py-2.25 text-sm font-bold ${
+                  category === c ? "border-amber bg-amber text-forest" : "border-cream/30 bg-forest/60 text-cream"
+                }`}
                 onClick={() => setCategory(c)}
               >
                 {CATEGORIES[c].label}
               </button>
             ))}
           </div>
-          <label className={styles.field}>
+          <label className="flex flex-col gap-1.25">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -248,114 +258,100 @@ export default function IdeasBoard() {
               rows={3}
               placeholder="e.g. Bring back the seed packets. The 2024 ones actually sprouted."
               aria-label="Your feedback, idea, or request"
+              className={`${inputClass} min-h-18 resize-y`}
             />
-            <span className={styles.count}>
+            <span className="self-end text-xs tabular-nums opacity-55">
               {text.length}/{MAX_LENGTH}
             </span>
           </label>
-          <button type="submit" className={styles.submit}>
-            Post it
-          </button>
-          {error && (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          )}
+          <Button type="submit">Post it</Button>
+          {error && <ErrorNote>{error}</ErrorNote>}
         </form>
-      </section>
+      </Section>
 
-      <section className={styles.section} aria-label="The board">
-        <h2>The board</h2>
-        <p className={styles.sub}>
-          Ranked by the people. Democracy, but for a bar party.
-        </p>
-        <div className={styles.controls}>
-          <div className={styles.tabs} role="tablist" aria-label="Filter by category">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "all"}
-              className={`${styles.tab} ${filter === "all" ? styles.tabActive : ""}`}
-              onClick={() => setFilter("all")}
-            >
-              All
-              <span className={styles.countBadge}>{items.length}</span>
-            </button>
-            {CATEGORY_ORDER.map((c) => (
+      <Section
+        label="The board"
+        title="The board"
+        sub="Ranked by the people. Democracy, but for a bar party."
+      >
+        <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-3.25">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
+            {(["all", ...CATEGORY_ORDER] as Filter[]).map((f) => {
+              const active = filter === f;
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.75 text-sm font-bold ${
+                    active ? "border-cream bg-cream text-forest" : "border-cream/22 bg-cream/7 text-cream"
+                  }`}
+                  onClick={() => setFilter(f)}
+                >
+                  {f === "all" ? "All" : CATEGORIES[f].label}
+                  <span
+                    className={`rounded-full px-2 py-px text-xs tabular-nums ${
+                      active ? "bg-forest/12" : "bg-forest/25"
+                    }`}
+                  >
+                    {f === "all" ? items.length : counts[f]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-2" role="group" aria-label="Sort order">
+            {(
+              [
+                ["top", "Top"],
+                ["newest", "Newest"],
+              ] as [Sort, string][]
+            ).map(([s, label]) => (
               <button
-                key={c}
+                key={s}
                 type="button"
-                role="tab"
-                aria-selected={filter === c}
-                className={`${styles.tab} ${filter === c ? styles.tabActive : ""}`}
-                onClick={() => setFilter(c)}
+                aria-pressed={sort === s}
+                className={`cursor-pointer rounded-full border px-3.5 py-1.75 text-sm font-bold ${
+                  sort === s ? "border-amber bg-amber text-forest" : "border-cream/30 bg-transparent text-cream"
+                }`}
+                onClick={() => setSort(s)}
               >
-                {CATEGORIES[c].label}
-                <span className={styles.countBadge}>{counts[c]}</span>
+                {label}
               </button>
             ))}
-          </div>
-          <div className={styles.sort} role="group" aria-label="Sort order">
-            <button
-              type="button"
-              aria-pressed={sort === "top"}
-              className={`${styles.sortBtn} ${sort === "top" ? styles.sortBtnActive : ""}`}
-              onClick={() => setSort("top")}
-            >
-              Top
-            </button>
-            <button
-              type="button"
-              aria-pressed={sort === "newest"}
-              className={`${styles.sortBtn} ${sort === "newest" ? styles.sortBtnActive : ""}`}
-              onClick={() => setSort("newest")}
-            >
-              Newest
-            </button>
           </div>
         </div>
 
         {loading ? (
-          <p className={styles.empty}>Shaking the box awake&hellip;</p>
+          <EmptyNote className="my-6">Shaking the box awake&hellip;</EmptyNote>
         ) : loadError ? (
-          <p className={styles.empty} role="alert">{loadError}</p>
+          <EmptyNote className="my-6" role="alert">{loadError}</EmptyNote>
         ) : visible.length === 0 ? (
-          <p className={styles.empty}>{emptyForFilter}</p>
+          <EmptyNote className="my-6">{emptyForFilter}</EmptyNote>
         ) : (
-          <ol className={styles.board}>
+          <ol className="flex w-full flex-col gap-2.5">
             {visible.map((item) => {
-              const myVote = votes[item.id];
               return (
-                <li key={item.id} className={styles.card}>
-                  <div className={styles.voteCol}>
-                    <button
-                      type="button"
-                      aria-label={`Upvote: ${item.text.slice(0, 60)}`}
-                      aria-pressed={myVote === 1}
-                      className={`${styles.voteBtn} ${myVote === 1 ? styles.voteBtnActive : ""}`}
-                      onClick={() => vote(1, item.id)}
-                    >
-                      ▲
-                    </button>
-                    <span className={styles.score} aria-label={`Score ${score(item)}`}>
+                <li
+                  key={item.id}
+                  className="flex items-start gap-3.5 rounded-xl bg-cream px-4 py-3.5 text-forest shadow-row"
+                >
+                  <div className="flex min-w-10.5 flex-col items-center gap-0.5">
+                    {voteButton(item, 1)}
+                    <span className="text-base font-black tabular-nums" aria-label={`Score ${score(item)}`}>
                       {score(item)}
                     </span>
-                    <button
-                      type="button"
-                      aria-label={`Downvote: ${item.text.slice(0, 60)}`}
-                      aria-pressed={myVote === -1}
-                      className={`${styles.voteBtn} ${myVote === -1 ? styles.voteBtnActive : ""}`}
-                      onClick={() => vote(-1, item.id)}
-                    >
-                      ▼
-                    </button>
+                    {voteButton(item, -1)}
                   </div>
-                  <div className={styles.body}>
-                    <span className={`${styles.badge} ${badgeClass[item.category]}`}>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.25">
+                    <span
+                      className={`self-start rounded-full px-2.5 py-0.75 text-xs font-black tracking-[.12em] uppercase ${badgeClass[item.category]}`}
+                    >
                       {CATEGORIES[item.category].label}
                     </span>
-                    <p>{item.text}</p>
-                    <span className={styles.meta}>
+                    <p className="text-base leading-[1.45] wrap-anywhere">{item.text}</p>
+                    <span className="text-xs tabular-nums opacity-60">
                       {item.ups} up · {item.downs} down · {formatDate(item.createdAt)}
                     </span>
                   </div>
@@ -364,12 +360,10 @@ export default function IdeasBoard() {
             })}
           </ol>
         )}
-        <p className={styles.note}>Posts and votes are shared with everyone. Your own votes are remembered on this device.</p>
-      </section>
-
-      <footer className="history-footer">
-        <Link href="/">&larr; Back to the countdown</Link>
-      </footer>
-    </main>
+        <FootNote className="mt-5">
+          Posts and votes are shared with everyone. Your own votes are remembered on this device.
+        </FootNote>
+      </Section>
+    </PageShell>
   );
 }

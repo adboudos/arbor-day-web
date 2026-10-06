@@ -1,16 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { loadLeaflet, type Leaflet } from "@/lib/leaflet";
+import { MAP_FRAME_CLASS, addTiles, esc, loadLeaflet, pinIcon, type Leaflet } from "@/lib/leaflet";
 import { fmtMiles, type OutOfTowner } from "@/data/outOfTowners";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * Map of every inducted out-of-towner's hometown. Pins re-render when the
@@ -32,13 +24,7 @@ export default function VisitorMap({ visitors }: { visitors: OutOfTowner[] }) {
     }
     const bounds = L.latLngBounds([]);
     visitors.forEach((v) => {
-      const icon = L.divIcon({
-        className: "venue-pin",
-        html: `<span>&#9992;</span>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-      });
-      L.marker([v.lat, v.lng], { icon })
+      L.marker([v.lat, v.lng], { icon: pinIcon(L, "&#9992;") })
         .addTo(layer)
         .bindPopup(
           `<strong>${esc(v.name)}</strong><br />${esc(v.resolved)} &middot; ${esc(fmtMiles(v.miles))} &middot; &#8217;${String(v.year).slice(2)}`,
@@ -56,11 +42,7 @@ export default function VisitorMap({ visitors }: { visitors: OutOfTowner[] }) {
       .then((L: Leaflet) => {
         if (cancelled || !ref.current || mapRef.current) return;
         const map = L.map(ref.current, { scrollWheelZoom: false });
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+        addTiles(L, map);
         layerRef.current = L.layerGroup().addTo(map);
         mapRef.current = map;
         syncPins(L);
@@ -86,7 +68,7 @@ export default function VisitorMap({ visitors }: { visitors: OutOfTowner[] }) {
   return (
     <div
       ref={ref}
-      className="venue-map"
+      className={MAP_FRAME_CLASS}
       role="img"
       aria-label="Map with pins for every out-of-towner's hometown"
     />

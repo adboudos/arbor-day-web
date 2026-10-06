@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import SiteNav from "@/components/SiteNav";
+import {
+  Button,
+  EmptyNote,
+  ErrorNote,
+  Field,
+  FootNote,
+  PageShell,
+  Section,
+  formPanel,
+  inputClass,
+} from "@/components/ui";
 import {
   createPhotoWallEntry,
   fetchEditions,
@@ -97,25 +106,10 @@ export default function PhotoWall() {
   }
 
   return (
-    <main className="history-page">
-      <header className="history-hero">
-        <p className="history-kicker">
-          <Link href="/">&larr; arborday.beer</Link>
-        </p>
-        <h1>Photo Wall</h1>
-        <p className="history-tagline">
-          Every Arbor Day, through everybody&apos;s lens.
-        </p>
-      </header>
-
-      <section className="hof-section" aria-label="Add your photo">
-        <h2>Hang yours</h2>
-        <p className="hof-sub">
-          Got a gem from a past party? Put it on the wall.
-        </p>
-        <form className="hof-form" onSubmit={handleSubmit}>
-          <label className="hof-field">
-            <span>Your name</span>
+    <PageShell title="Photo Wall" tagline={<>Every Arbor Day, through everybody&apos;s lens.</>}>
+      <Section label="Add your photo" title="Hang yours" sub="Got a gem from a past party? Put it on the wall.">
+        <form className={`${formPanel} max-w-104`} onSubmit={handleSubmit}>
+          <Field label="Your name">
             <input
               type="text"
               value={name}
@@ -123,15 +117,16 @@ export default function PhotoWall() {
               placeholder="Your name"
               maxLength={60}
               autoComplete="name"
+              className={inputClass}
             />
-          </label>
-          <label className="hof-field">
-            <span>Which party</span>
+          </Field>
+          <Field label="Which party">
             <select
               value={year}
               onChange={(e) =>
                 setYear(e.target.value === "" ? "" : Number(e.target.value))
               }
+              className={inputClass}
             >
               <option value="">Not sure / other</option>
               {editions.map((ed) => (
@@ -140,66 +135,61 @@ export default function PhotoWall() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="hof-field">
-            <span>Caption (optional)</span>
+          </Field>
+          <Field label="Caption (optional)">
             <input
               type="text"
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               placeholder="What is happening here"
               maxLength={140}
+              className={inputClass}
             />
-          </label>
-          <label className="hof-field">
-            <span>Photo</span>
+          </Field>
+          <Field label="Photo">
             <input
               ref={fileRef}
               type="file"
               accept="image/*"
               aria-label="Choose a photo to upload"
+              className={`${inputClass} file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-cream/15 file:px-2.5 file:py-1 file:font-bold file:text-cream`}
             />
-          </label>
-          <button
-            type="submit"
-            className="hof-btn"
-            disabled={status === "uploading"}
-          >
+          </Field>
+          <Button type="submit" disabled={status === "uploading"}>
             {status === "uploading" ? "Hanging it up..." : "Add to the wall"}
-          </button>
-          {error && (
-            <p className="hof-error" role="alert">
-              {error}
-            </p>
-          )}
+          </Button>
+          {error && <ErrorNote>{error}</ErrorNote>}
           {status === "done" && (
-            <p className="hof-note" role="status">
+            <FootNote className="mt-3.5" role="status">
               It is on the wall. Thanks for contributing.
-            </p>
+            </FootNote>
           )}
         </form>
-      </section>
+      </Section>
 
-      <section className="hof-section" aria-label="The wall">
-        <h2>The wall</h2>
+      <Section label="The wall" title="The wall">
         {loading ? (
-          <p className="hof-empty">Unrolling the wall&hellip;</p>
+          <EmptyNote>Unrolling the wall&hellip;</EmptyNote>
         ) : photos.length === 0 ? (
-          <p className="hof-empty">
-            No photos yet. Yours could be the first one up here.
-          </p>
+          <EmptyNote>No photos yet. Yours could be the first one up here.</EmptyNote>
         ) : (
-          <div className="wall-grid">
+          <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
             {photos.map((p) => (
-              <figure key={p.id} className="wall-card">
+              <figure
+                key={p.id}
+                className="overflow-hidden rounded-xl border border-cream/16 bg-cream/6"
+              >
+                {/* Plain <img> on purpose: next/image optimization would bill per image on Vercel. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoWallUrl(p.storage_path)}
                   alt={p.caption || `Photo by ${p.uploader_name}`}
                   loading="lazy"
+                  className="block h-48 w-full bg-forest-deep object-cover"
                 />
-                <figcaption>
-                  {p.caption && <span className="wall-caption">{p.caption}</span>}
-                  <span className="wall-meta">
+                <figcaption className="flex flex-col gap-1 px-3.5 py-2.75">
+                  {p.caption && <span className="text-base">{p.caption}</span>}
+                  <span className="text-xs opacity-60">
                     {p.uploader_name}
                     {p.editions ? ` · ’${String(p.editions.year).slice(2)}` : ""}
                   </span>
@@ -208,11 +198,7 @@ export default function PhotoWall() {
             ))}
           </div>
         )}
-      </section>
-
-      <footer className="history-footer">
-        <Link href="/">&larr; Back to the countdown</Link>
-      </footer>
-    </main>
+      </Section>
+    </PageShell>
   );
 }
