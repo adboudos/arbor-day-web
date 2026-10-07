@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/hall-of-fame", label: "Hall of Fame" },
   { href: "/ideas", label: "Ideas & Requests" },
   { href: "/photo-wall", label: "Photo Wall" },
+  { href: "/arbor-trail", label: "Arbor Trail" },
   { href: "/war-room", label: "War Room" },
 ];
 
