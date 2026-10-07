@@ -56,6 +56,7 @@ export interface GameState {
   pongThrowsLeft: number;
   pongHits: number;
   pongUsed: boolean;
+  toastUsed: boolean;
   rouletteBad: number;
   rouletteTaken: number[];
   rouletteUsed: boolean;
@@ -133,6 +134,7 @@ export function createGame(input: SetupInput): GameState {
     pongThrowsLeft: 0,
     pongHits: 0,
     pongUsed: false,
+    toastUsed: false,
     rouletteBad: 0,
     rouletteTaken: [],
     rouletteUsed: false,
@@ -280,6 +282,7 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     landmark: null,
     landmarkResult: null,
     pongUsed: false,
+    toastUsed: false,
     rouletteUsed: false,
     rouletteResult: null,
   };
@@ -317,7 +320,11 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
         log: pushLog(next.log, "The crew is broke. Rations drop to nursing one beer."),
       };
     }
-    for (const m of standingCrew(next)) {
+    // Iterate by index and read each member fresh: wobbleMember replaces
+    // the crew array, so references captured before the loop go stale.
+    for (let i = 0; i < next.crew.length; i++) {
+      const m = next.crew[i];
+      if (m.status === "gone") continue;
       if (Math.random() < pace.wobbleChance) {
         next = wobbleMember(next, m);
       }
@@ -361,7 +368,10 @@ export function resolveChoice(state: GameState, choiceIndex: number): GameState 
     next = { ...next, money: next.money - choice.cost };
   }
   next = applyResult(next, choice.result);
-  return { ...next, eventResult: choice.result.text, screen: "event" };
+  // The log's last line is the resolved result text (chance alts and
+  // appended notes included).
+  const eventResult = next.log[next.log.length - 1] ?? choice.result.text;
+  return { ...next, eventResult, screen: "event" };
 }
 
 export function leaveLandmark(state: GameState): GameState {
@@ -371,9 +381,9 @@ export function leaveLandmark(state: GameState): GameState {
 
 export function giveToast(state: GameState, toastIndex: number): GameState {
   const toast = TOASTS[toastIndex];
-  if (!toast) return state;
+  if (!toast || state.toastUsed) return state;
   const success = Math.random() < 0.7;
-  let next: GameState = { ...state };
+  let next: GameState = { ...state, toastUsed: true };
   if (success) {
     next = {
       ...next,

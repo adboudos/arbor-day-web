@@ -506,11 +506,13 @@ function LandmarkScreen({
         </div>
       ) : (
         <div className="space-y-2">
-          <TrailButton onClick={() => setToasting(true)}>
-            <span className="font-bold">1. Give a toast</span>
-            <br />
-            <span className="trail-dim text-xs">Rally the crew. 70 percent glory.</span>
-          </TrailButton>
+          {!state.toastUsed && (
+            <TrailButton onClick={() => setToasting(true)}>
+              <span className="font-bold">1. Give a toast</span>
+              <br />
+              <span className="trail-dim text-xs">Rally the crew. 70 percent glory. Once per stop.</span>
+            </TrailButton>
+          )}
           {!state.pongUsed && (
             <TrailButton onClick={onPong}>
               <span className="font-bold">2. Play beer pong</span>
