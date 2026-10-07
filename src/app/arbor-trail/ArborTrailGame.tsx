@@ -5,8 +5,6 @@ import {
   ACHIEVEMENTS,
   CLASSES,
   DEFAULT_NAMES,
-  DETOUR_BEERS,
-  DETOUR_COST,
   GOAL_BEERS,
   PACES,
   RATIONS,
@@ -30,7 +28,9 @@ import {
   leaveRoulette,
   loadAchievements,
   loadScores,
+  MinigameResult,
   resolveChoice,
+  resolveMinigame,
   saveScore,
   shopItemsForTurn,
   skipDetour,
@@ -471,7 +471,7 @@ function DetourScreen({
 }) {
   const bar = state.detour;
   if (!bar) return null;
-  const cantAfford = state.money < DETOUR_COST;
+  const cantAfford = (bar.cost ?? 0) > state.money;
   return (
     <div className="space-y-4">
       <StatusPanel state={state} />
@@ -486,19 +486,7 @@ function DetourScreen({
             {state.detourResult}
           </p>
         </div>
-      ) : (
-        <div className="trail-panel space-y-1 p-4 font-mono text-sm">
-          <p className="m-0">
-            <span className="trail-dim">COVER </span>${DETOUR_COST}
-          </p>
-          <p className="m-0">
-            <span className="trail-dim">HAUL </span>+{DETOUR_BEERS} beers
-          </p>
-          <p className="m-0">
-            <span className="trail-danger">RISK </span>2 crew members wobble, -8 dignity
-          </p>
-        </div>
-      )}
+      ) : null}
       {state.detourResult ? (
         <TrailButton primary onClick={onSkip}>
           <span className="font-bold">STUMBLE ONWARD</span>
@@ -513,11 +501,11 @@ function DetourScreen({
               onTake();
             }}
           >
-            <span className="font-bold">TAKE THE DETOUR</span>
+            <span className="font-bold">{bar.cta}</span>
             {cantAfford && (
               <>
                 <br />
-                <span className="trail-dim text-xs">(cannot afford the cover)</span>
+                <span className="trail-dim text-xs">(cannot afford it)</span>
               </>
             )}
           </TrailButton>
@@ -528,6 +516,238 @@ function DetourScreen({
       )}
     </div>
   );
+}
+
+/* ---------------- detour mini-games ---------------- */
+
+function TimingGame({
+  title,
+  hint,
+  throws,
+  zoneForThrow,
+  bullseyePad,
+  speed,
+  onDone,
+}: {
+  title: string;
+  hint: string;
+  throws: number;
+  zoneForThrow: (i: number) => [number, number];
+  bullseyePad: number;
+  speed: number;
+  onDone: (hits: number, bullseyes: number) => void;
+}) {
+  const [pos, setPos] = useState(0);
+  const [throwIdx, setThrowIdx] = useState(0);
+  const [hits, setHits] = useState(0);
+  const [bulls, setBulls] = useState(0);
+  const dirRef = useRef(1);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPos((p) => {
+        let n = p + dirRef.current * speed;
+        if (n >= 100) {
+          dirRef.current = -1;
+          n = 100;
+        } else if (n <= 0) {
+          dirRef.current = 1;
+          n = 0;
+        }
+        return n;
+      });
+    }, 30);
+    return () => clearInterval(id);
+  }, [speed]);
+  const [zs, ze] = zoneForThrow(throwIdx);
+  const hit = pos >= zs && pos <= ze;
+  const bull = pos >= zs + bullseyePad && pos <= ze - bullseyePad;
+  const left = throws - throwIdx;
+  if (left <= 0) return null;
+  return (
+    <div className="space-y-4">
+      <div className="trail-panel space-y-1 p-4 text-center">
+        <h2 className="trail-glow m-0 font-mono text-xl font-bold">{title}</h2>
+        <p className="trail-dim m-0 font-mono text-sm">
+          Throw {throwIdx + 1} of {throws} - Hits: {hits}
+        </p>
+      </div>
+      <div className="trail-panel p-4">
+        <div className="relative h-10 w-full overflow-hidden rounded border border-current">
+          <div
+            className="trail-target absolute inset-y-0"
+            style={{ left: `${zs}%`, width: `${ze - zs}%` }}
+          />
+          <div
+            className="trail-marker absolute inset-y-0 w-[3px]"
+            style={{ left: `${pos}%` }}
+          />
+        </div>
+        <p className="trail-dim m-0 mt-2 text-center font-mono text-xs">{hint}</p>
+      </div>
+      <TrailButton
+        primary
+        onClick={() => {
+          const h = hit ? 1 : 0;
+          const b = bull ? 1 : 0;
+          if (h) sfx.hit();
+          else sfx.miss();
+          const nh = hits + h;
+          const nb = bulls + b;
+          if (throwIdx + 1 >= throws) {
+            onDone(nh, nb);
+          } else {
+            setHits(nh);
+            setBulls(nb);
+            setThrowIdx(throwIdx + 1);
+          }
+        }}
+      >
+        <span className="text-center font-bold">THROW</span>
+      </TrailButton>
+    </div>
+  );
+}
+
+function ChugGame({ onDone }: { onDone: (taps: number) => void }) {
+  const [taps, setTaps] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(5);
+  const tapsRef = useRef(0);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(id);
+          onDoneRef.current(tapsRef.current);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="space-y-4">
+      <div className="trail-panel space-y-1 p-4 text-center">
+        <h2 className="trail-glow m-0 font-mono text-xl font-bold">DAB CHUG</h2>
+        <p className="trail-dim m-0 font-mono text-sm">
+          {timeLeft}s left - {taps} chugs
+        </p>
+      </div>
+      <div className="trail-panel p-4">
+        <div className="trail-bar h-3 w-full">
+          <div
+            className="trail-bar-fill h-full"
+            style={{ width: `${(timeLeft / 5) * 100}%` }}
+          />
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          sfx.chug();
+          tapsRef.current += 1;
+          setTaps(tapsRef.current);
+        }}
+        className="trail-btn trail-btn-primary mx-auto block min-h-[96px] w-full max-w-xs rounded-full font-mono text-2xl font-bold"
+      >
+        CHUG
+      </button>
+      <p className="trail-dim m-0 text-center font-mono text-xs">
+        Mash it. As many Dabs as possible.
+      </p>
+    </div>
+  );
+}
+
+function MinigameScreen({
+  state,
+  onDone,
+}: {
+  state: GameState;
+  onDone: (r: MinigameResult) => void;
+}) {
+  const kind = state.minigame;
+  const barName = state.detour?.name ?? "Detour";
+  if (kind === "darts") {
+    return (
+      <TimingGame
+        title={`${barName}: DARTS`}
+        hint="Stop the marker in the zone. Center is bullseye."
+        throws={3}
+        zoneForThrow={() => [44, 56]}
+        bullseyePad={4}
+        speed={3.2}
+        onDone={(hits, bulls) =>
+          onDone({
+            beers: hits * 2 + bulls,
+            dignity: bulls * 2,
+            wobbles: 0,
+            text: `Darts at ${barName}: ${hits}/3 hits${bulls > 0 ? `, ${bulls} bullseye${bulls > 1 ? "s" : ""}` : ""}. +${hits * 2 + bulls} beers.`,
+          })
+        }
+      />
+    );
+  }
+  if (kind === "batting") {
+    return (
+      <TimingGame
+        title={`${barName}: BATTING CAGES`}
+        hint="Swing when the marker crosses the plate."
+        throws={3}
+        zoneForThrow={() => [42, 58]}
+        bullseyePad={5}
+        speed={4.5}
+        onDone={(hits, bulls) =>
+          onDone({
+            beers: hits * 2 + bulls * 2,
+            dignity: bulls * 2,
+            wobbles: 0,
+            text: `Batting cages: ${hits}/3 hits${bulls > 0 ? `, ${bulls} home run${bulls > 1 ? "s" : ""}` : ""}. +${hits * 2 + bulls * 2} beers.`,
+          })
+        }
+      />
+    );
+  }
+  if (kind === "pool") {
+    return (
+      <TimingGame
+        title={`${barName}: POOL`}
+        hint="The table gets tougher every shot. The zone shrinks."
+        throws={3}
+        zoneForThrow={(i) => [40 + i * 2, 60 - i * 2]}
+        bullseyePad={3}
+        speed={2.8}
+        onDone={(hits, bulls) =>
+          onDone({
+            beers: hits * 3 + bulls,
+            dignity: hits === 3 ? 5 : 0,
+            wobbles: 0,
+            text: `Pool at ${barName}: ${hits}/3${hits === 3 ? ", run the table" : ""}. +${hits * 3 + bulls} beers.`,
+          })
+        }
+      />
+    );
+  }
+  if (kind === "chug") {
+    return (
+      <ChugGame
+        onDone={(taps) => {
+          const beers = Math.min(8, Math.floor(taps / 4));
+          onDone({
+            beers,
+            dignity: -5,
+            wobbles: 1,
+            text: `${taps} chugs at ${barName}. +${beers} Dab beers, -5 dignity, and the room spins.`,
+          });
+        }}
+      />
+    );
+  }
+  return null;
 }
 
 function LandmarkScreen({
@@ -1058,6 +1278,12 @@ export default function ArborTrailGame() {
             state={state}
             onTake={() => setState((s) => (s ? takeDetour(s) : s))}
             onSkip={() => setState((s) => (s ? skipDetour(s) : s))}
+          />
+        )}
+        {state?.screen === "minigame" && (
+          <MinigameScreen
+            state={state}
+            onDone={(r: MinigameResult) => setState((s) => (s ? resolveMinigame(s, r) : s))}
           />
         )}
         {state?.screen === "landmark" && (

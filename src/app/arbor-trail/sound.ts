@@ -97,6 +97,10 @@ export const sfx = {
     tone(147, 0.16, "sawtooth", 0.05);
     tone(110, 0.22, "sawtooth", 0.05, 0.14);
   },
+  chug() {
+    tone(180, 0.06, "square", 0.04);
+    tone(140, 0.06, "square", 0.04, 0.05);
+  },
   win() {
     const notes = [523, 659, 784, 1046, 784, 1046];
     notes.forEach((n, i) => tone(n, 0.12, "square", 0.05, i * 0.11));

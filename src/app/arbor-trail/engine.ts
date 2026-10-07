@@ -7,8 +7,6 @@ import {
   ClassId,
   CrewMember,
   DEFAULT_NAMES,
-  DETOUR_BEERS,
-  DETOUR_COST,
   DIVE_BARS,
   DiveBar,
   EVENTS,
@@ -16,6 +14,7 @@ import {
   LANDMARKS,
   Landmark,
   MemberStatus,
+  MinigameKind,
   PaceId,
   PACES,
   PERSONALITIES,
@@ -33,6 +32,7 @@ export type Screen =
   | "travel"
   | "event"
   | "detour"
+  | "minigame"
   | "landmark"
   | "shop"
   | "pong"
@@ -76,6 +76,7 @@ export interface GameState {
   banter: string | null;
   detour: DiveBar | null;
   detourResult: string | null;
+  minigame: MinigameKind | null;
 }
 
 export interface SetupInput {
@@ -172,6 +173,7 @@ export function createGame(input: SetupInput): GameState {
     banter: null,
     detour: null,
     detourResult: null,
+    minigame: null,
   };
 }
 
@@ -420,37 +422,79 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
 
 /* ---------------- dive bar detours ---------------- */
 
+export interface MinigameResult {
+  beers: number;
+  dignity: number;
+  wobbles: number;
+  text: string;
+}
+
 export function takeDetour(state: GameState): GameState {
-  if (!state.detour || state.money < DETOUR_COST) return state;
-  let next: GameState = {
-    ...state,
-    money: state.money - DETOUR_COST,
-    beers: state.beers + DETOUR_BEERS,
-    dignity: Math.max(0, state.dignity - 8),
-  };
+  const bar = state.detour;
+  if (!bar) return state;
+  if (bar.cost && state.money < bar.cost) return state;
+
+  // Mini-game bars hand off to the game screen.
+  if (
+    bar.kind === "darts" ||
+    bar.kind === "batting" ||
+    bar.kind === "pool" ||
+    bar.kind === "chug"
+  ) {
+    return { ...state, screen: "minigame", minigame: bar.kind };
+  }
+
+  let next: GameState = { ...state };
+  if (bar.cost) next = { ...next, money: next.money - bar.cost };
+  let result = bar.result;
+
+  if (bar.kind === "gamble") {
+    if (Math.random() < 0.5) {
+      next = { ...next, beers: next.beers + (bar.beers ?? 0) };
+    } else {
+      result = bar.loseResult ?? bar.result;
+      next = { ...next, dignity: Math.max(0, next.dignity + (bar.loseDignity ?? 0)) };
+      for (let i = 0; i < (bar.loseWobbles ?? 0); i++) {
+        const m = randomStanding(next);
+        if (m) next = wobbleMember(next, m);
+      }
+    }
+  } else {
+    if (bar.beers) next = { ...next, beers: next.beers + bar.beers };
+    if (bar.dignity)
+      next = {
+        ...next,
+        dignity: Math.max(0, Math.min(100, next.dignity + bar.dignity)),
+      };
+    for (let i = 0; i < (bar.wobbles ?? 0); i++) {
+      const m = randomStanding(next);
+      if (m) next = wobbleMember(next, m);
+    }
+  }
+
   next = {
     ...next,
-    log: pushLog(
-      next.log,
-      `Detour: ${state.detour.name}. -$${DETOUR_COST}, +${DETOUR_BEERS} beers, -8 dignity.`
-    ),
+    detourResult: result,
+    log: pushLog(next.log, `Detour: ${bar.name}. ${result}`),
   };
-  for (let i = 0; i < 2; i++) {
+  next = checkEnd(next);
+  if (next.over) return { ...next, screen: "over" };
+  return { ...next, screen: "detour" };
+}
+
+export function resolveMinigame(state: GameState, r: MinigameResult): GameState {
+  let next: GameState = {
+    ...state,
+    beers: state.beers + r.beers,
+    dignity: Math.max(0, Math.min(100, state.dignity + r.dignity)),
+    minigame: null,
+    detourResult: r.text,
+    log: pushLog(state.log, `${state.detour?.name ?? "Detour"}: ${r.text}`),
+  };
+  for (let i = 0; i < r.wobbles; i++) {
     const m = randomStanding(next);
     if (m) next = wobbleMember(next, m);
   }
-  let result = `The dive delivers. +${DETOUR_BEERS} beers, but the room is spinning.`;
-  if (Math.random() < 0.3) {
-    const m = randomStanding(next);
-    if (m) next = wobbleMember(next, m);
-    next = {
-      ...next,
-      dignity: Math.max(0, next.dignity - 5),
-      log: pushLog(next.log, "The dive bites back. -5 dignity."),
-    };
-    result += " The dive bites back: -5 dignity.";
-  }
-  next = { ...next, detourResult: result };
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
   return { ...next, screen: "detour" };
