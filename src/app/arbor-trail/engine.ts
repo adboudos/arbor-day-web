@@ -7,11 +7,14 @@ import {
   ClassId,
   CrewMember,
   DEFAULT_NAMES,
+  DIVE_BARS,
+  DiveBar,
   EVENTS,
   GOAL_BEERS,
   LANDMARKS,
   Landmark,
   MemberStatus,
+  MinigameKind,
   PaceId,
   PACES,
   PERSONALITIES,
@@ -28,6 +31,8 @@ export type Screen =
   | "setup"
   | "travel"
   | "event"
+  | "detour"
+  | "minigame"
   | "landmark"
   | "shop"
   | "pong"
@@ -69,6 +74,9 @@ export interface GameState {
   tombstones: Tombstone[];
   score: number;
   banter: string | null;
+  detour: DiveBar | null;
+  detourResult: string | null;
+  minigame: MinigameKind | null;
 }
 
 export interface SetupInput {
@@ -163,6 +171,9 @@ export function createGame(input: SetupInput): GameState {
     tombstones: [],
     score: 0,
     banter: null,
+    detour: null,
+    detourResult: null,
+    minigame: null,
   };
 }
 
@@ -318,6 +329,8 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     toastUsed: false,
     rouletteUsed: false,
     rouletteResult: null,
+    detour: null,
+    detourResult: null,
   };
 
   if (rest) {
@@ -393,7 +406,110 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     };
   }
 
+  // A dive bar detour precludes a regular event: one drama per turn.
+  if (Math.random() < 0.22) {
+    return {
+      ...next,
+      screen: "detour",
+      detour: pick(DIVE_BARS),
+      detourResult: null,
+      log: pushLog(next.log, "A dive bar glows down a side street. The crew slows..."),
+    };
+  }
+
   return rollEvent(next);
+}
+
+/* ---------------- dive bar detours ---------------- */
+
+export interface MinigameResult {
+  beers: number;
+  dignity: number;
+  wobbles: number;
+  text: string;
+}
+
+export function takeDetour(state: GameState): GameState {
+  const bar = state.detour;
+  if (!bar) return state;
+  if (bar.cost && state.money < bar.cost) return state;
+
+  // Mini-game bars hand off to the game screen.
+  if (
+    bar.kind === "darts" ||
+    bar.kind === "batting" ||
+    bar.kind === "pool" ||
+    bar.kind === "chug"
+  ) {
+    return { ...state, screen: "minigame", minigame: bar.kind };
+  }
+
+  let next: GameState = { ...state };
+  if (bar.cost) next = { ...next, money: next.money - bar.cost };
+  let result = bar.result;
+
+  if (bar.kind === "gamble") {
+    if (Math.random() < 0.5) {
+      next = { ...next, beers: next.beers + (bar.beers ?? 0) };
+    } else {
+      result = bar.loseResult ?? bar.result;
+      next = { ...next, dignity: Math.max(0, next.dignity + (bar.loseDignity ?? 0)) };
+      for (let i = 0; i < (bar.loseWobbles ?? 0); i++) {
+        const m = randomStanding(next);
+        if (m) next = wobbleMember(next, m);
+      }
+    }
+  } else {
+    if (bar.beers) next = { ...next, beers: next.beers + bar.beers };
+    if (bar.dignity)
+      next = {
+        ...next,
+        dignity: Math.max(0, Math.min(100, next.dignity + bar.dignity)),
+      };
+    for (let i = 0; i < (bar.wobbles ?? 0); i++) {
+      const m = randomStanding(next);
+      if (m) next = wobbleMember(next, m);
+    }
+  }
+
+  next = {
+    ...next,
+    detourResult: result,
+    log: pushLog(next.log, `Detour: ${bar.name}. ${result}`),
+  };
+  next = checkEnd(next);
+  if (next.over) return { ...next, screen: "over" };
+  return { ...next, screen: "detour" };
+}
+
+export function resolveMinigame(state: GameState, r: MinigameResult): GameState {
+  let next: GameState = {
+    ...state,
+    beers: state.beers + r.beers,
+    dignity: Math.max(0, Math.min(100, state.dignity + r.dignity)),
+    minigame: null,
+    detourResult: r.text,
+    log: pushLog(state.log, `${state.detour?.name ?? "Detour"}: ${r.text}`),
+  };
+  for (let i = 0; i < r.wobbles; i++) {
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+  }
+  next = checkEnd(next);
+  if (next.over) return { ...next, screen: "over" };
+  return { ...next, screen: "detour" };
+}
+
+export function skipDetour(state: GameState): GameState {
+  if (!state.detour) return state;
+  const next = {
+    ...state,
+    detour: null,
+    detourResult: null,
+    screen: "travel" as const,
+    log: pushLog(state.log, "The crew walks past the dive. Discipline. Mostly fear."),
+  };
+  return next;
 }
 
 export function resolveChoice(state: GameState, choiceIndex: number): GameState {

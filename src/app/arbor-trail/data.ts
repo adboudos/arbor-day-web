@@ -285,6 +285,120 @@ export const TOMBSTONE_CAUSES = [
   "a competing toast",
 ];
 
+/* ---------------- dive bar detours ----------------
+   Real Chicago dives, each with its own game or fate. */
+
+export type MinigameKind = "darts" | "batting" | "pool" | "chug";
+export type DetourKind = MinigameKind | "good" | "bad" | "rooftop" | "gamble" | "lost";
+
+export interface DiveBar {
+  name: string;
+  blurb: string;
+  kind: DetourKind;
+  cta: string;
+  /** fixed-outcome numbers (good/bad/rooftop/gamble/lost) */
+  beers?: number;
+  dignity?: number;
+  cost?: number;
+  wobbles?: number;
+  result: string;
+  loseResult?: string;
+  loseDignity?: number;
+  loseWobbles?: number;
+}
+
+export const DIVE_BARS: DiveBar[] = [
+  {
+    name: "Parrots",
+    blurb: "Peanut shells on the floor. A dartboard with strong opinions.",
+    kind: "darts",
+    cta: "THROW DARTS",
+    result: "",
+  },
+  {
+    name: "Sluggers",
+    blurb: "Yes, that Sluggers. The batting cages are still here. So is the smell of 2024.",
+    kind: "batting",
+    cta: "ENTER THE CAGES",
+    result: "",
+  },
+  {
+    name: "Old Crow",
+    blurb: "There are... children here? At 10 PM?",
+    kind: "bad",
+    cta: "GO IN ANYWAY",
+    dignity: -12,
+    result:
+      "Children. There are children here. This is a family restaurant with a bar, not a bar. -12 dignity. Leave immediately.",
+  },
+  {
+    name: "Burton Place",
+    blurb: "A handwritten sign: PRIVATE PARTY. The door guy is not smiling.",
+    kind: "bad",
+    cta: "TRY THE DOOR",
+    dignity: -5,
+    result:
+      "Private party. You are not on the list. You will never be on the list. -5 dignity.",
+  },
+  {
+    name: "Sheffields",
+    blurb: "The beer garden glows. The bartender squints, then grins.",
+    kind: "good",
+    cta: "BELLY UP",
+    beers: 4,
+    dignity: 5,
+    result:
+      "The bartender remembers you from somewhere. Shots on the house. +4 beers, +5 dignity.",
+  },
+  {
+    name: "Dugout",
+    blurb: "Someone says the magic word: rooftop.",
+    kind: "rooftop",
+    cta: "FIND THE ROOFTOP",
+    beers: 2,
+    dignity: 5,
+    result:
+      "You find the rooftop. The skyline does the rest. +2 beers, +5 dignity.",
+  },
+  {
+    name: "L&L",
+    blurb: "The regulars are staring. The lighting is a choice. Everything is a choice here.",
+    kind: "gamble",
+    cta: "RISK IT",
+    beers: 6,
+    result:
+      "You survive L&L. +6 beers. Do not make eye contact on the way out.",
+    loseResult:
+      "That guy in the corner has been staring for ten minutes. Time to go. -10 dignity.",
+    loseDignity: -10,
+    loseWobbles: 1,
+  },
+  {
+    name: "Lange's",
+    blurb: "Peak Chicago dive. The felt is worn. The regulars are legends. This is the one.",
+    kind: "pool",
+    cta: "RACK 'EM",
+    result: "",
+  },
+  {
+    name: "Old Town",
+    blurb: "The street signs look unfamiliar. Too unfamiliar.",
+    kind: "lost",
+    cta: "WANDER IN",
+    cost: 5,
+    dignity: -10,
+    result:
+      "This is not a bar. This is a neighborhood. You are very, very far from home and it sucks. -$5 cab, -10 dignity.",
+  },
+  {
+    name: "Meiers",
+    blurb: "Meiers Tavern. The Dab is ice cold. The challenge has been issued.",
+    kind: "chug",
+    cta: "CHUG DABS",
+    result: "",
+  },
+];
+
 /* ---------------- crew personalities ----------------
    Banter lines support {other}, {leader}, {beers}, {clock}. */
 
