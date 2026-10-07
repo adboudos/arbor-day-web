@@ -14,6 +14,7 @@ import {
   MemberStatus,
   PaceId,
   PACES,
+  PERSONALITIES,
   RationId,
   RATIONS,
   SHOP_ITEMS,
@@ -56,6 +57,7 @@ export interface GameState {
   pongThrowsLeft: number;
   pongHits: number;
   pongUsed: boolean;
+  toastUsed: boolean;
   rouletteBad: number;
   rouletteTaken: number[];
   rouletteUsed: boolean;
@@ -66,6 +68,7 @@ export interface GameState {
   endReason: string;
   tombstones: Tombstone[];
   score: number;
+  banter: string | null;
 }
 
 export interface SetupInput {
@@ -77,6 +80,19 @@ export interface SetupInput {
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const pick = <T,>(arr: T[]): T => arr[rand(arr.length)];
+
+export function getPersonality(id: string) {
+  return PERSONALITIES.find((p) => p.id === id) ?? PERSONALITIES[0];
+}
+
+function shuffled<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = rand(i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
 export function formatClock(turn: number): string {
   const total = 21 * 60 + turn * 15;
@@ -106,11 +122,13 @@ export function createGame(input: SetupInput): GameState {
   const names = input.names.map((n, i) =>
     n.trim() === "" ? DEFAULT_NAMES[i] ?? `Friend ${i + 1}` : n.trim().slice(0, 16)
   );
-  const crew: CrewMember[] = names.map((name) => ({
+  const personalityIds = shuffled(PERSONALITIES.map((p) => p.id));
+  const crew: CrewMember[] = names.map((name, i) => ({
     name,
     tolerance: cls.tolerance + rand(3),
     charm: 4 + rand(5),
     status: "sober" as MemberStatus,
+    personalityId: personalityIds[i % personalityIds.length],
   }));
   return {
     screen: "travel",
@@ -133,6 +151,7 @@ export function createGame(input: SetupInput): GameState {
     pongThrowsLeft: 0,
     pongHits: 0,
     pongUsed: false,
+    toastUsed: false,
     rouletteBad: 0,
     rouletteTaken: [],
     rouletteUsed: false,
@@ -143,6 +162,7 @@ export function createGame(input: SetupInput): GameState {
     endReason: "",
     tombstones: [],
     score: 0,
+    banter: null,
   };
 }
 
@@ -194,6 +214,21 @@ function soberMember(state: GameState): GameState {
 function randomStanding(state: GameState): CrewMember | null {
   const s = standingCrew(state);
   return s.length === 0 ? null : pick(s);
+}
+
+function addBanter(state: GameState): GameState {
+  const speakers = standingCrew(state);
+  if (speakers.length === 0) return state;
+  const speaker = pick(speakers);
+  const others = speakers.filter((m) => m !== speaker);
+  const other = others.length > 0 ? pick(others) : speaker;
+  const line = pick(getPersonality(speaker.personalityId).lines)
+    .replaceAll("{other}", other.name)
+    .replaceAll("{leader}", state.crew[0]?.name ?? "the leader")
+    .replaceAll("{beers}", String(state.beers))
+    .replaceAll("{clock}", formatClock(state.turn));
+  const banter = `${speaker.name}: ${line}`;
+  return { ...state, banter, log: pushLog(state.log, banter) };
 }
 
 function applyResult(state: GameState, r: ChoiceResult): GameState {
@@ -280,6 +315,7 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     landmark: null,
     landmarkResult: null,
     pongUsed: false,
+    toastUsed: false,
     rouletteUsed: false,
     rouletteResult: null,
   };
@@ -317,7 +353,11 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
         log: pushLog(next.log, "The crew is broke. Rations drop to nursing one beer."),
       };
     }
-    for (const m of standingCrew(next)) {
+    // Iterate by index and read each member fresh: wobbleMember replaces
+    // the crew array, so references captured before the loop go stale.
+    for (let i = 0; i < next.crew.length; i++) {
+      const m = next.crew[i];
+      if (m.status === "gone") continue;
       if (Math.random() < pace.wobbleChance) {
         next = wobbleMember(next, m);
       }
@@ -326,6 +366,11 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
 
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
+
+  // The crew talks while walking. Rest is quiet recovery time.
+  if (!rest && Math.random() < 0.45) {
+    next = addBanter(next);
+  }
 
   const landmark = LANDMARKS.find((l) => l.turn === next.turn);
   if (landmark) {
@@ -361,7 +406,10 @@ export function resolveChoice(state: GameState, choiceIndex: number): GameState 
     next = { ...next, money: next.money - choice.cost };
   }
   next = applyResult(next, choice.result);
-  return { ...next, eventResult: choice.result.text, screen: "event" };
+  // The log's last line is the resolved result text (chance alts and
+  // appended notes included).
+  const eventResult = next.log[next.log.length - 1] ?? choice.result.text;
+  return { ...next, eventResult, screen: "event" };
 }
 
 export function leaveLandmark(state: GameState): GameState {
@@ -371,9 +419,9 @@ export function leaveLandmark(state: GameState): GameState {
 
 export function giveToast(state: GameState, toastIndex: number): GameState {
   const toast = TOASTS[toastIndex];
-  if (!toast) return state;
+  if (!toast || state.toastUsed) return state;
   const success = Math.random() < 0.7;
-  let next: GameState = { ...state };
+  let next: GameState = { ...state, toastUsed: true };
   if (success) {
     next = {
       ...next,
