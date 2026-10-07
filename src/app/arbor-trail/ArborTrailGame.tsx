@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   ACHIEVEMENTS,
   CLASSES,
@@ -29,6 +29,7 @@ import {
   loadAchievements,
   loadScores,
   MinigameResult,
+  openShop,
   resolveChoice,
   resolveMinigame,
   resolveRoast,
@@ -74,32 +75,80 @@ function useTypewriter(text: string, speed = 12) {
   };
 }
 
+// A double click or a fat-fingered double tap must never fire two actions
+// (two turns, two choices). Every action button shares one short cooldown.
+const CLICK_GUARD_MS = 250;
+let lastActivation = 0;
+function allowActivation(): boolean {
+  const now = Date.now();
+  if (now - lastActivation < CLICK_GUARD_MS) return false;
+  lastActivation = now;
+  return true;
+}
+
 function TrailButton({
   children,
   onClick,
   disabled,
   primary,
+  silent,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
   primary?: boolean;
+  /** The handler plays its own sound, so skip the default click. */
+  silent?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        if (!allowActivation()) return;
+        if (!silent) sfx.click();
+        onClick();
+      }}
       disabled={disabled}
       className={`trail-btn min-h-[44px] w-full px-4 py-3 text-left font-mono text-base ${
         primary ? "trail-btn-primary" : ""
-      } ${disabled ? "opacity-40" : ""}`}
+      }`}
     >
       {children}
     </button>
   );
 }
 
-function StatBar({ label, value, max }: { label: string; value: number; max: number }) {
+interface StatDelta {
+  beers: number;
+  money: number;
+  dignity: number;
+  k: number;
+}
+const DeltaContext = createContext<StatDelta | null>(null);
+
+function DeltaTag({ value, prefix = "" }: { value: number; prefix?: string }) {
+  if (!value) return null;
+  const up = value > 0;
+  return (
+    <span className={`trail-delta ${up ? "trail-delta-up" : "trail-delta-down"}`} aria-hidden>
+      {up ? "+" : "-"}
+      {prefix}
+      {Math.abs(value)}
+    </span>
+  );
+}
+
+function StatBar({
+  label,
+  value,
+  max,
+  delta,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  delta?: React.ReactNode;
+}) {
   const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
   return (
     <div className="font-mono text-sm">
@@ -107,6 +156,7 @@ function StatBar({ label, value, max }: { label: string; value: number; max: num
         <span className="trail-dim">{label}</span>
         <span>
           {value}/{max}
+          {delta}
         </span>
       </div>
       <div className="trail-bar mt-1 h-2.5 w-full">
@@ -161,6 +211,7 @@ function GameLog({ lines }: { lines: string[] }) {
 }
 
 function StatusPanel({ state }: { state: GameState }) {
+  const delta = useContext(DeltaContext);
   return (
     <div className="trail-panel space-y-3 p-4">
       <div className="flex items-baseline justify-between font-mono">
@@ -169,14 +220,21 @@ function StatusPanel({ state }: { state: GameState }) {
           {getPace(state.paceId).name} - {getRation(state.rationId).name}
         </span>
       </div>
-      <StatBar label="BEERS" value={Math.min(state.beers, GOAL_BEERS)} max={GOAL_BEERS} />
+      <StatBar
+        label="BEERS"
+        value={Math.min(state.beers, GOAL_BEERS)}
+        max={GOAL_BEERS}
+        delta={delta ? <DeltaTag key={delta.k} value={delta.beers} /> : null}
+      />
       <div className="flex justify-between font-mono text-sm">
         <span>
           <span className="trail-dim">CASH </span>${state.money}
+          {delta && <DeltaTag key={delta.k} value={delta.money} prefix="$" />}
         </span>
         <span>
           <span className="trail-dim">DIGNITY </span>
           <span className={state.dignity <= 25 ? "trail-danger" : ""}>{state.dignity}</span>
+          {delta && <DeltaTag key={delta.k} value={delta.dignity} />}
         </span>
       </div>
       <CrewList state={state} />
@@ -190,6 +248,25 @@ const MUG = `      .-""-.
       |    ||
       |____||
        \\__/`;
+
+/** One-line stats for the minigame screens, where the full panel would crowd the game. */
+function MiniStats({ state }: { state: GameState }) {
+  const delta = useContext(DeltaContext);
+  return (
+    <div className="trail-panel flex justify-between px-4 py-2 font-mono text-sm">
+      <span>
+        <span className="trail-dim">BEERS </span>
+        {state.beers}
+        {delta && <DeltaTag key={delta.k} value={delta.beers} />}
+      </span>
+      <span>
+        <span className="trail-dim">DIGNITY </span>
+        {state.dignity}
+        {delta && <DeltaTag key={delta.k} value={delta.dignity} />}
+      </span>
+    </div>
+  );
+}
 
 function BadgeCase() {
   const [earned] = useState<string[]>(() => loadAchievements());
@@ -235,6 +312,7 @@ function TitleScreen({ onStart }: { onStart: () => void }) {
       <button
         type="button"
         onClick={() => {
+          if (!allowActivation()) return;
           sfx.click();
           onStart();
         }}
@@ -285,7 +363,10 @@ function SetupScreen({ onBegin }: { onBegin: (s: GameState) => void }) {
           <button
             key={c.id}
             type="button"
-            onClick={() => setClassId(c.id)}
+            onClick={() => {
+              sfx.click();
+              setClassId(c.id);
+            }}
             aria-pressed={classId === c.id}
             className={`trail-btn min-h-[44px] w-full px-4 py-3 text-left font-mono text-sm ${
               classId === c.id ? "trail-btn-active" : ""
@@ -304,7 +385,10 @@ function SetupScreen({ onBegin }: { onBegin: (s: GameState) => void }) {
           <button
             key={p.id}
             type="button"
-            onClick={() => setPaceId(p.id)}
+            onClick={() => {
+              sfx.click();
+              setPaceId(p.id);
+            }}
             aria-pressed={paceId === p.id}
             className={`trail-btn min-h-[44px] w-full px-4 py-3 text-left font-mono text-sm ${
               paceId === p.id ? "trail-btn-active" : ""
@@ -323,7 +407,10 @@ function SetupScreen({ onBegin }: { onBegin: (s: GameState) => void }) {
           <button
             key={r.id}
             type="button"
-            onClick={() => setRationId(r.id)}
+            onClick={() => {
+              sfx.click();
+              setRationId(r.id);
+            }}
             aria-pressed={rationId === r.id}
             className={`trail-btn min-h-[44px] w-full px-4 py-3 text-left font-mono text-sm ${
               rationId === r.id ? "trail-btn-active" : ""
@@ -338,10 +425,7 @@ function SetupScreen({ onBegin }: { onBegin: (s: GameState) => void }) {
 
       <TrailButton
         primary
-        onClick={() => {
-          sfx.click();
-          onBegin(createGame({ names, classId, paceId, rationId }));
-        }}
+        onClick={() => onBegin(createGame({ names, classId, paceId, rationId }))}
       >
         <span className="font-bold">DEPART AT 9 PM</span>
       </TrailButton>
@@ -372,6 +456,7 @@ function TravelScreen({
       <GameLog lines={state.log} />
       <TrailButton
         primary
+        silent
         onClick={() => {
           sfx.step();
           onAdvance();
@@ -405,12 +490,16 @@ function EventScreen({
     <div className="space-y-4">
       <StatusPanel state={state} />
       <div
-        className="trail-panel min-h-[120px] p-4"
+        key={state.eventResult ? "result" : "text"}
+        className={`trail-panel min-h-[120px] p-4 ${state.eventResult ? "trail-flash" : ""}`}
         onClick={() => tw.skip()}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter") tw.skip();
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            tw.skip();
+          }
         }}
         aria-label="Event text, activate to skip typing"
       >
@@ -419,9 +508,15 @@ function EventScreen({
           {!state.eventResult && !tw.done && <span className="blink">_</span>}
         </p>
         {state.eventResult && (
-          <p className="trail-glow mb-0 mt-4 font-mono text-base leading-relaxed">
+          <p
+            className="trail-glow mb-0 mt-4 font-mono text-base leading-relaxed"
+            aria-live="polite"
+          >
             {state.eventResult}
           </p>
+        )}
+        {!state.eventResult && !tw.done && (
+          <p className="trail-dim mb-0 mt-3 font-mono text-xs">tap to skip</p>
         )}
       </div>
       {state.eventResult ? (
@@ -434,14 +529,7 @@ function EventScreen({
             {event.choices.map((c, i) => {
               const cantAfford = c.cost !== undefined && state.money < c.cost;
               return (
-                <TrailButton
-                  key={i}
-                  onClick={() => {
-                    sfx.click();
-                    onChoice(i);
-                  }}
-                  disabled={cantAfford}
-                >
+                <TrailButton key={i} onClick={() => onChoice(i)} disabled={cantAfford}>
                   <span className="font-bold">
                     {i + 1}. {c.label}
                   </span>
@@ -488,7 +576,7 @@ function DetourScreen({
         <p className="m-0 font-mono text-sm leading-relaxed trail-dim">{bar.blurb}</p>
       </div>
       {state.detourResult ? (
-        <div className="trail-panel p-4">
+        <div className="trail-panel trail-flash p-4" aria-live="polite">
           <p className="trail-glow m-0 font-mono text-sm leading-relaxed">
             {state.detourResult}
           </p>
@@ -531,6 +619,7 @@ function DetourScreen({
         <div className="space-y-2">
           <TrailButton
             primary
+            silent
             disabled={cantAfford}
             onClick={() => {
               sfx.detour();
@@ -556,29 +645,15 @@ function DetourScreen({
 
 /* ---------------- detour mini-games ---------------- */
 
-function TimingGame({
-  title,
-  hint,
-  throws,
-  zoneForThrow,
-  bullseyePad,
-  speed,
-  onDone,
-}: {
-  title: string;
-  hint: string;
-  throws: number;
-  zoneForThrow: (i: number) => [number, number];
-  bullseyePad: number;
-  speed: number;
-  onDone: (hits: number, bullseyes: number) => void;
-}) {
+/** How long a throw's result stays on screen before the game moves on. */
+const THROW_PAUSE_MS = 750;
+
+/** A marker that sweeps 0..100 and back. Frozen while a result is being shown. */
+function useSweep(speed: number, frozen: boolean) {
   const [pos, setPos] = useState(0);
-  const [throwIdx, setThrowIdx] = useState(0);
-  const [hits, setHits] = useState(0);
-  const [bulls, setBulls] = useState(0);
   const dirRef = useRef(1);
   useEffect(() => {
+    if (frozen) return;
     const id = setInterval(() => {
       setPos((p) => {
         let n = p + dirRef.current * speed;
@@ -593,20 +668,75 @@ function TimingGame({
       });
     }, 30);
     return () => clearInterval(id);
-  }, [speed]);
+  }, [speed, frozen]);
+  return pos;
+}
+
+type ThrowOutcome = "bull" | "hit" | "miss";
+
+function ThrowCallout({ outcome, bullLabel }: { outcome: ThrowOutcome | null; bullLabel: string }) {
+  // Reserve the line so the layout doesn't jump when a result appears.
+  return (
+    <div className="flex h-8 items-center justify-center" aria-live="assertive">
+      {outcome && (
+        <p
+          className={`trail-callout m-0 font-mono text-xl font-bold ${
+            outcome === "miss" ? "trail-danger" : "trail-glow"
+          }`}
+        >
+          {outcome === "bull" ? bullLabel : outcome === "hit" ? "HIT!" : "MISS"}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TimingGame({
+  title,
+  hint,
+  throws,
+  zoneForThrow,
+  bullseyePad,
+  speed,
+  bullLabel = "BULLSEYE!",
+  state,
+  onDone,
+}: {
+  title: string;
+  hint: string;
+  throws: number;
+  zoneForThrow: (i: number) => [number, number];
+  bullseyePad: number;
+  speed: number;
+  bullLabel?: string;
+  state: GameState;
+  onDone: (hits: number, bullseyes: number) => void;
+}) {
+  const [throwIdx, setThrowIdx] = useState(0);
+  const [hits, setHits] = useState(0);
+  const [bulls, setBulls] = useState(0);
+  const [outcome, setOutcome] = useState<ThrowOutcome | null>(null);
+  const pos = useSweep(speed, outcome !== null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
   const [zs, ze] = zoneForThrow(throwIdx);
   const hit = pos >= zs && pos <= ze;
   const bull = pos >= zs + bullseyePad && pos <= ze - bullseyePad;
-  const left = throws - throwIdx;
-  if (left <= 0) return null;
+  const locked = outcome !== null;
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-1 p-4 text-center">
         <h2 className="trail-glow m-0 font-mono text-xl font-bold">{title}</h2>
         <p className="trail-dim m-0 font-mono text-sm">
-          Throw {throwIdx + 1} of {throws} - Hits: {hits}
+          Throw {Math.min(throwIdx + 1, throws)} of {throws} - Hits: {hits}
         </p>
       </div>
+      <MiniStats state={state} />
       <div className="trail-panel p-4">
         <div className="relative h-10 w-full overflow-hidden rounded border border-current">
           <div
@@ -618,24 +748,31 @@ function TimingGame({
             style={{ left: `${pos}%` }}
           />
         </div>
-        <p className="trail-dim m-0 mt-2 text-center font-mono text-xs">{hint}</p>
+        <ThrowCallout outcome={outcome} bullLabel={bullLabel} />
+        <p className="trail-dim m-0 text-center font-mono text-xs">{hint}</p>
       </div>
       <TrailButton
         primary
+        silent
+        disabled={locked}
         onClick={() => {
-          const h = hit ? 1 : 0;
-          const b = bull ? 1 : 0;
-          if (h) sfx.hit();
-          else sfx.miss();
-          const nh = hits + h;
-          const nb = bulls + b;
-          if (throwIdx + 1 >= throws) {
-            onDone(nh, nb);
-          } else {
-            setHits(nh);
-            setBulls(nb);
-            setThrowIdx(throwIdx + 1);
-          }
+          if (locked) return;
+          const result: ThrowOutcome = bull ? "bull" : hit ? "hit" : "miss";
+          if (result === "miss") sfx.miss();
+          else sfx.hit();
+          const nh = hits + (hit ? 1 : 0);
+          const nb = bulls + (bull ? 1 : 0);
+          setHits(nh);
+          setBulls(nb);
+          setOutcome(result);
+          timer.current = setTimeout(() => {
+            if (throwIdx + 1 >= throws) {
+              onDone(nh, nb);
+            } else {
+              setThrowIdx(throwIdx + 1);
+              setOutcome(null);
+            }
+          }, THROW_PAUSE_MS);
         }}
       >
         <span className="text-center font-bold">THROW</span>
@@ -644,53 +781,82 @@ function TimingGame({
   );
 }
 
-function ChugGame({ onDone }: { onDone: (taps: number) => void }) {
+const CHUG_SECONDS = 5;
+
+function ChugGame({ state, onDone }: { state: GameState; onDone: (taps: number) => void }) {
+  // The clock starts on the first tap, not on arrival, so the player is never
+  // already losing time while the screen is still sinking in.
+  const [phase, setPhase] = useState<"ready" | "running" | "done">("ready");
   const [taps, setTaps] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(5);
+  const [msLeft, setMsLeft] = useState(CHUG_SECONDS * 1000);
   const tapsRef = useRef(0);
   const onDoneRef = useRef(onDone);
+  const timers = useRef<{ tick?: ReturnType<typeof setInterval>; end?: ReturnType<typeof setTimeout> }>({});
   useEffect(() => {
     onDoneRef.current = onDone;
   });
   useEffect(() => {
-    const id = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(id);
-          onDoneRef.current(tapsRef.current);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
+    const t = timers.current;
+    return () => {
+      if (t.tick) clearInterval(t.tick);
+      if (t.end) clearTimeout(t.end);
+    };
   }, []);
+
+  const start = () => {
+    const endAt = Date.now() + CHUG_SECONDS * 1000;
+    setPhase("running");
+    timers.current.tick = setInterval(() => {
+      const left = Math.max(0, endAt - Date.now());
+      setMsLeft(left);
+      if (left <= 0) {
+        if (timers.current.tick) clearInterval(timers.current.tick);
+        setPhase("done");
+        timers.current.end = setTimeout(() => onDoneRef.current(tapsRef.current), THROW_PAUSE_MS);
+      }
+    }, 50);
+  };
+
+  const label =
+    phase === "ready"
+      ? "TAP TO START"
+      : phase === "running"
+        ? "CHUG"
+        : "TIME";
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-1 p-4 text-center">
         <h2 className="trail-glow m-0 font-mono text-xl font-bold">DAB CHUG</h2>
         <p className="trail-dim m-0 font-mono text-sm">
-          {timeLeft}s left - {taps} chugs
+          {phase === "ready"
+            ? `${CHUG_SECONDS}s on the clock. It starts on your first tap.`
+            : phase === "done"
+              ? `Time! ${taps} chugs.`
+              : `${(msLeft / 1000).toFixed(1)}s left - ${taps} chugs`}
         </p>
       </div>
+      <MiniStats state={state} />
       <div className="trail-panel p-4">
         <div className="trail-bar h-3 w-full">
           <div
             className="trail-bar-fill h-full"
-            style={{ width: `${(timeLeft / 5) * 100}%` }}
+            style={{ width: `${(msLeft / (CHUG_SECONDS * 1000)) * 100}%`, transition: "none" }}
           />
         </div>
       </div>
       <button
         type="button"
+        disabled={phase === "done"}
         onClick={() => {
+          if (phase === "done") return;
+          if (phase === "ready") start();
           sfx.chug();
           tapsRef.current += 1;
           setTaps(tapsRef.current);
         }}
         className="trail-btn trail-btn-primary mx-auto block min-h-[96px] w-full max-w-xs rounded-full font-mono text-2xl font-bold"
       >
-        CHUG
+        {label}
       </button>
       <p className="trail-dim m-0 text-center font-mono text-xs">
         Mash it. As many Dabs as possible.
@@ -711,6 +877,7 @@ function MinigameScreen({
   if (kind === "darts") {
     return (
       <TimingGame
+        state={state}
         title={`${barName}: DARTS`}
         hint="Stop the marker in the zone. Center is bullseye."
         throws={3}
@@ -731,8 +898,10 @@ function MinigameScreen({
   if (kind === "batting") {
     return (
       <TimingGame
+        state={state}
         title={`${barName}: BATTING CAGES`}
         hint="Swing when the marker crosses the plate."
+        bullLabel="HOME RUN!"
         throws={3}
         zoneForThrow={() => [42, 58]}
         bullseyePad={5}
@@ -751,8 +920,10 @@ function MinigameScreen({
   if (kind === "pool") {
     return (
       <TimingGame
+        state={state}
         title={`${barName}: POOL`}
         hint="The table gets tougher every shot. The zone shrinks."
+        bullLabel="CLEAN POT!"
         throws={3}
         zoneForThrow={(i) => [40 + i * 2, 60 - i * 2]}
         bullseyePad={3}
@@ -771,6 +942,7 @@ function MinigameScreen({
   if (kind === "chug") {
     return (
       <ChugGame
+        state={state}
         onDone={(taps) => {
           const beers = Math.min(8, Math.floor(taps / 4));
           onDone({
@@ -786,8 +958,10 @@ function MinigameScreen({
   if (kind === "trumpet") {
     return (
       <TimingGame
+        state={state}
         title={`${barName}: TRUMPET SOLO`}
         hint="The solo is peaking. Do not spill. Do not breathe."
+        bullLabel="PERFECT!"
         throws={3}
         zoneForThrow={() => [46, 54]}
         bullseyePad={2}
@@ -811,6 +985,7 @@ function LandmarkScreen({
   onToast,
   onPong,
   onRoulette,
+  onOpenShop,
   onBuy,
   onRest,
   onLeave,
@@ -819,21 +994,21 @@ function LandmarkScreen({
   onToast: (i: number) => void;
   onPong: () => void;
   onRoulette: () => void;
+  onOpenShop: () => void;
   onBuy: (id: string) => void;
   onRest: () => void;
   onLeave: () => void;
 }) {
   const [toasting, setToasting] = useState(false);
   const [shopping, setShopping] = useState(false);
-  const [stock, setStock] = useState<string[]>([]);
   const lm = state.landmark;
   if (!lm) return null;
+  const stock = state.shopStock ?? [];
   const openShop = () => {
-    const pool = shopItemsForTurn(state.turn);
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    setStock(shuffled.slice(0, 3).map((i) => i.id));
+    onOpenShop();
     setShopping(true);
   };
+  const result = [state.pongResult, state.landmarkResult].filter(Boolean).join(" ");
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-2 p-4 text-center">
@@ -843,11 +1018,9 @@ function LandmarkScreen({
         <p className="m-0 font-mono text-sm leading-relaxed">{lm.blurb}</p>
       </div>
       <StatusPanel state={state} />
-      {state.landmarkResult && (
-        <div className="trail-panel p-4">
-          <p className="trail-glow m-0 font-mono text-sm leading-relaxed">
-            {state.landmarkResult}
-          </p>
+      {result && (
+        <div key={result} className="trail-panel trail-flash p-4" aria-live="polite">
+          <p className="trail-glow m-0 font-mono text-sm leading-relaxed">{result}</p>
         </div>
       )}
       {lm.final ? (
@@ -860,6 +1033,7 @@ function LandmarkScreen({
           {TOASTS.map((t, i) => (
             <TrailButton
               key={i}
+              silent
               onClick={() => {
                 sfx.toast();
                 onToast(i);
@@ -886,6 +1060,7 @@ function LandmarkScreen({
                 <TrailButton
                   key={item.id}
                   disabled={cantAfford}
+                  silent
                   onClick={() => {
                     sfx.coin();
                     onBuy(item.id);
@@ -952,41 +1127,32 @@ function LandmarkScreen({
 }
 
 function PongScreen({
-  throwsLeft,
-  hits,
+  state,
   onThrow,
 }: {
-  throwsLeft: number;
-  hits: number;
+  state: GameState;
   onThrow: (hit: boolean) => void;
 }) {
-  const [pos, setPos] = useState(0);
-  const dirRef = useRef(1);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPos((p) => {
-        let n = p + dirRef.current * 2.6;
-        if (n >= 100) {
-          dirRef.current = -1;
-          n = 100;
-        } else if (n <= 0) {
-          dirRef.current = 1;
-          n = 0;
-        }
-        return n;
-      });
-    }, 30);
-    return () => clearInterval(id);
-  }, []);
+  const [outcome, setOutcome] = useState<ThrowOutcome | null>(null);
+  const pos = useSweep(2.6, outcome !== null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
   const hit = pos >= 42 && pos <= 58;
+  const locked = outcome !== null;
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-1 p-4 text-center">
         <h2 className="trail-glow m-0 font-mono text-xl font-bold">BEER PONG</h2>
         <p className="trail-dim m-0 font-mono text-sm">
-          Throws left: {throwsLeft} - Hits: {hits}
+          Throws left: {state.pongThrowsLeft} - Hits: {state.pongHits}
         </p>
       </div>
+      <MiniStats state={state} />
       <div className="trail-panel p-4">
         <div className="relative h-10 w-full overflow-hidden rounded border border-current">
           <div className="trail-target absolute inset-y-0" style={{ left: "42%", width: "16%" }} />
@@ -995,16 +1161,25 @@ function PongScreen({
             style={{ left: `${pos}%` }}
           />
         </div>
-        <p className="trail-dim m-0 mt-2 text-center font-mono text-xs">
+        <ThrowCallout outcome={outcome} bullLabel="SPLASH!" />
+        <p className="trail-dim m-0 text-center font-mono text-xs">
           Stop the marker in the zone, then throw.
         </p>
       </div>
       <TrailButton
         primary
+        silent
+        disabled={locked}
         onClick={() => {
+          if (locked) return;
           if (hit) sfx.hit();
           else sfx.miss();
-          onThrow(hit);
+          setOutcome(hit ? "hit" : "miss");
+          const landed = hit;
+          timer.current = setTimeout(() => {
+            onThrow(landed);
+            setOutcome(null);
+          }, THROW_PAUSE_MS);
         }}
       >
         <span className="text-center font-bold">THROW</span>
@@ -1023,6 +1198,9 @@ function RouletteScreen({
   onLeave: () => void;
 }) {
   const done = state.rouletteUsed;
+  const taken = state.rouletteTaken.length;
+  // The engine logs every shot, so the last log line is the shot just taken.
+  const lastShot = taken > 0 ? state.log[state.log.length - 1] : null;
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-1 p-4 text-center">
@@ -1030,40 +1208,46 @@ function RouletteScreen({
         <p className="trail-dim m-0 font-mono text-sm">
           Six shots. One is the bad one. +2 beers per clean shot.
           <br />
-          Take all five clean for a Daredevil bonus. Walk away anytime.
+          Take all five clean for a Daredevil bonus. Walk away anytime, but you only get one run at the table per stop.
         </p>
       </div>
+      <MiniStats state={state} />
       <div className="trail-panel p-4">
         <div className="grid grid-cols-3 gap-3">
           {[0, 1, 2, 3, 4, 5].map((slot) => {
-            const taken = state.rouletteTaken.includes(slot);
+            const isTaken = state.rouletteTaken.includes(slot);
             const isBad = done && slot === state.rouletteBad;
             return (
               <button
                 key={slot}
                 type="button"
-                disabled={taken || done}
+                disabled={isTaken || done}
                 onClick={() => {
+                  if (!allowActivation()) return;
                   sfx.click();
                   onTake(slot);
                 }}
-                aria-label={taken ? `Shot ${slot + 1}, taken` : `Take shot ${slot + 1}`}
+                aria-label={isTaken ? `Shot ${slot + 1}, taken` : `Take shot ${slot + 1}`}
                 className={`flex min-h-[64px] items-center justify-center rounded-lg border font-mono text-2xl ${
                   isBad
                     ? "trail-danger border-current"
-                    : taken
+                    : isTaken
                       ? "trail-dim opacity-40"
                       : "trail-btn"
                 }`}
               >
-                {isBad ? "X" : taken ? "-" : "?"}
+                {isBad ? "X" : isTaken ? "OK" : "?"}
               </button>
             );
           })}
         </div>
-        {state.rouletteResult && (
-          <p className="trail-glow mb-0 mt-4 text-center font-mono text-sm">
-            {state.rouletteResult}
+        {(state.rouletteResult || lastShot) && (
+          <p
+            key={taken}
+            className="trail-glow trail-callout mb-0 mt-4 text-center font-mono text-sm"
+            aria-live="polite"
+          >
+            {state.rouletteResult ?? lastShot}
           </p>
         )}
       </div>
@@ -1142,7 +1326,7 @@ function OverScreen({
   onRestart: () => void;
 }) {
   const [name, setName] = useState(state.crew[0]?.name ?? "Traveler");
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [newBadges] = useState<string[]>(() =>
     unlockAchievements(evaluateAchievements(state))
   );
@@ -1154,7 +1338,7 @@ function OverScreen({
   }, [state.won]);
 
   const handleSave = () => {
-    if (saved) return;
+    if (saveStatus !== "idle") return;
     const entry: HighScore = {
       name: name.trim().slice(0, 16) || "Traveler",
       score: state.score,
@@ -1164,14 +1348,17 @@ function OverScreen({
       date: new Date().toISOString().slice(0, 10),
     };
     saveScore(entry);
+    setSaveStatus("saving");
+    // Wait for the upload before showing the board, or the new score isn't on it yet.
     submitTrailScore({
       name: entry.name,
       score: entry.score,
       beers: entry.beers,
       class: cls.name,
       won: entry.won,
-    }).catch(() => undefined);
-    setSaved(true);
+    })
+      .catch(() => undefined)
+      .finally(() => setSaveStatus("saved"));
   };
 
   return (
@@ -1232,31 +1419,47 @@ function OverScreen({
         </div>
       )}
 
-      {!saved ? (
-        <div className="mx-auto flex max-w-md gap-2">
+      {saveStatus === "saved" ? (
+        <div className="space-y-3">
+          <p className="trail-glow trail-flash m-0 font-mono text-sm font-bold">
+            Legend saved: {name.trim().slice(0, 16) || "Traveler"}, {state.score} pts.
+          </p>
+          <HighScoreTable />
+        </div>
+      ) : (
+        <form
+          className="mx-auto flex max-w-md gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+        >
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={16}
+            disabled={saveStatus === "saving"}
             aria-label="Your legend name"
             placeholder="Your legend name"
             className="trail-input min-h-[44px] flex-1 px-3 py-2 font-mono text-base"
           />
           <button
-            type="button"
-            onClick={handleSave}
+            type="submit"
+            disabled={saveStatus === "saving"}
             className="trail-btn trail-btn-primary min-h-[44px] shrink-0 px-5 py-2 font-mono"
           >
-            SAVE
+            {saveStatus === "saving" ? "SAVING..." : "SAVE"}
           </button>
-        </div>
-      ) : (
-        <HighScoreTable />
+        </form>
       )}
 
       <button
         type="button"
-        onClick={onRestart}
+        onClick={() => {
+          if (!allowActivation()) return;
+          sfx.click();
+          onRestart();
+        }}
         className="trail-btn trail-btn-primary mx-auto block min-h-[48px] px-10 py-3 font-mono text-lg"
       >
         TRAVEL AGAIN
@@ -1268,6 +1471,44 @@ function OverScreen({
 export default function ArborTrailGame() {
   const [state, setState] = useState<GameState | null>(null);
   const [muted, setMutedState] = useState<boolean>(() => isMuted());
+  const [confirmQuit, setConfirmQuit] = useState(false);
+
+  // Track stat changes so every screen can show what just happened (+4 beers, -5 dignity).
+  const stats =
+    state && state.screen !== "setup"
+      ? { beers: state.beers, money: state.money, dignity: state.dignity }
+      : null;
+  const [prevStats, setPrevStats] = useState(stats);
+  const [delta, setDelta] = useState<StatDelta | null>(null);
+  if (
+    prevStats?.beers !== stats?.beers ||
+    prevStats?.money !== stats?.money ||
+    prevStats?.dignity !== stats?.dignity
+  ) {
+    setPrevStats(stats);
+    if (prevStats && stats) {
+      setDelta((d) => ({
+        beers: stats.beers - prevStats.beers,
+        money: stats.money - prevStats.money,
+        dignity: stats.dignity - prevStats.dignity,
+        k: (d?.k ?? 0) + 1,
+      }));
+    } else {
+      setDelta(null);
+    }
+  }
+  useEffect(() => {
+    if (!delta) return;
+    const id = setTimeout(() => setDelta(null), 1700);
+    return () => clearTimeout(id);
+  }, [delta]);
+
+  // A new screen (or a freshly shown result) should start at the top, not wherever
+  // the last button press left the scroll position.
+  const scrollKey = `${state?.screen ?? "title"}|${state?.eventResult ? 1 : 0}|${state?.detourResult ? 1 : 0}|${state?.landmarkResult ?? ""}|${state?.pongResult ?? ""}`;
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [scrollKey]);
 
   const continueFromEvent = () =>
     setState((s) => {
@@ -1279,7 +1520,11 @@ export default function ArborTrailGame() {
   return (
     <div className="trail-root min-h-screen">
       <div className="trail-scanlines pointer-events-none fixed inset-0 z-10" aria-hidden />
-      <main className="relative z-0 mx-auto w-full max-w-2xl px-4 pb-16 pt-8">
+      <DeltaContext.Provider value={delta}>
+      <main
+        key={state?.screen ?? "title"}
+        className="trail-screen relative z-0 mx-auto w-full max-w-2xl px-4 pb-16 pt-8"
+      >
         {!state && <TitleScreen onStart={() => setState({ screen: "setup" } as GameState)} />}
         {state?.screen === "setup" && (
           <SetupScreen onBegin={(s) => setState(s)} />
@@ -1296,19 +1541,41 @@ export default function ArborTrailGame() {
                   setMutedState(m);
                   if (!m) sfx.click();
                 }}
-                aria-pressed={muted}
                 aria-label={muted ? "Unmute sound" : "Mute sound"}
                 className="trail-dim min-h-[44px] px-2 underline"
               >
                 {muted ? "sound off" : "sound on"}
               </button>
-              <button
-                type="button"
-                onClick={() => setState(null)}
-                className="trail-dim min-h-[44px] px-2 underline"
-              >
-                quit to title
-              </button>
+              {confirmQuit ? (
+                <>
+                  <span className="trail-danger">lose this run?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmQuit(false);
+                      setState(null);
+                    }}
+                    className="trail-danger min-h-[44px] px-2 font-bold underline"
+                  >
+                    yes, quit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmQuit(false)}
+                    className="trail-dim min-h-[44px] px-2 underline"
+                  >
+                    keep playing
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmQuit(true)}
+                  className="trail-dim min-h-[44px] px-2 underline"
+                >
+                  quit to title
+                </button>
+              )}
             </span>
           </div>
         )}
@@ -1342,6 +1609,7 @@ export default function ArborTrailGame() {
             onToast={(i) => setState((s) => (s ? giveToast(s, i) : s))}
             onPong={() => setState((s) => (s ? startPong(s) : s))}
             onRoulette={() => setState((s) => (s ? startRoulette(s) : s))}
+            onOpenShop={() => setState((s) => (s ? openShop(s) : s))}
             onBuy={(id) => setState((s) => (s ? buyItem(s, id) : s))}
             onRest={() => setState((s) => (s ? advanceTurn(s, true) : s))}
             onLeave={() => setState((s) => (s ? leaveLandmark(s) : s))}
@@ -1349,8 +1617,7 @@ export default function ArborTrailGame() {
         )}
         {state?.screen === "pong" && (
           <PongScreen
-            throwsLeft={state.pongThrowsLeft}
-            hits={state.pongHits}
+            state={state}
             onThrow={(hit) => setState((s) => (s ? throwPong(s, hit) : s))}
           />
         )}
@@ -1362,9 +1629,13 @@ export default function ArborTrailGame() {
           />
         )}
         {state?.screen === "over" && (
-          <OverScreen state={state} onRestart={() => setState(null)} />
+          <OverScreen
+            state={state}
+            onRestart={() => setState({ screen: "setup" } as GameState)}
+          />
         )}
       </main>
+      </DeltaContext.Provider>
     </div>
   );
 }

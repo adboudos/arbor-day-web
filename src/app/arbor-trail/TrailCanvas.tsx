@@ -191,8 +191,9 @@ export default function TrailCanvas({
         g.fillStyle = reached ? "#ffb000" : "rgba(255,176,0,0.35)";
         g.fillRect(fx, GROUND_Y - 34, 2, 34);
         g.fillRect(fx + 2, GROUND_Y - 34, 12, 8);
-        g.fillStyle = "#0d0a06";
-        g.font = "7px monospace";
+        // Labels sit on the near-black ground, so they must be light to be readable.
+        g.fillStyle = reached ? "#ffb000" : "rgba(255,176,0,0.55)";
+        g.font = "8px monospace";
         g.fillText(lm.year, fx - 8, GROUND_Y + 34);
       }
 
@@ -202,9 +203,9 @@ export default function TrailCanvas({
       g.fillRect(finX - 2, GROUND_Y - 44, 4, 44);
       g.fillRect(finX - 2, GROUND_Y - 44, 44, 4);
       g.fillRect(finX + 38, GROUND_Y - 44, 4, 44);
-      g.fillStyle = "#0d0a06";
-      g.font = "7px monospace";
-      g.fillText("2027", finX + 4, GROUND_Y - 32);
+      g.fillStyle = "#ffb000";
+      g.font = "8px monospace";
+      g.fillText("2027", finX + 10, GROUND_Y - 24);
 
       // crew
       c.forEach((m, i) => {

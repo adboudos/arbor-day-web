@@ -42,15 +42,42 @@
   background: rgba(255, 176, 0, 0.06);
   color: #ffb000;
   cursor: pointer;
-  transition: background 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
 }
 
-.trail-btn:hover:not(:disabled) {
-  background: rgba(255, 176, 0, 0.14);
+/* Hover only where a real pointer exists, so touch screens don't get stuck hover. */
+@media (hover: hover) {
+  .trail-btn:hover:not(:disabled) {
+    background: rgba(255, 176, 0, 0.14);
+    border-color: #ffb000;
+  }
 }
 
+/* The press has to be obvious: sink the button and light it up. */
 .trail-btn:active:not(:disabled) {
-  background: rgba(255, 176, 0, 0.2);
+  background: rgba(255, 176, 0, 0.38);
+  border-color: #ffd97a;
+  box-shadow:
+    inset 0 0 14px rgba(255, 217, 122, 0.45),
+    0 0 14px rgba(255, 176, 0, 0.45);
+  transform: translateY(1px) scale(0.985);
+}
+
+.trail-btn:focus-visible {
+  outline: 2px solid #ffd97a;
+  outline-offset: 2px;
+}
+
+.trail-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .trail-btn-primary {
@@ -158,5 +185,107 @@
 @keyframes trail-blink {
   to {
     visibility: hidden;
+  }
+}
+
+/* Brief highlight on the panel that holds a fresh result, so it reads as "this just happened". */
+.trail-flash {
+  animation: trail-flash 0.7s ease-out;
+}
+
+@keyframes trail-flash {
+  0% {
+    background: rgba(255, 176, 0, 0.3);
+    box-shadow: 0 0 22px rgba(255, 176, 0, 0.55);
+  }
+  100% {
+    background: rgba(255, 176, 0, 0.04);
+    box-shadow: inset 0 0 24px rgba(255, 176, 0, 0.05);
+  }
+}
+
+/* Each screen eases in so a change of screen never looks like a jump cut. */
+.trail-screen {
+  animation: trail-screen-in 0.2s ease-out;
+}
+
+@keyframes trail-screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Floating +/- next to a stat when it changes. */
+.trail-delta {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-weight: bold;
+  animation: trail-delta 1.6s ease-out forwards;
+}
+
+.trail-delta-up {
+  color: #7dd87d;
+}
+
+.trail-delta-down {
+  color: #ff5a3c;
+}
+
+@keyframes trail-delta {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  15% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Timing minigames: big readable hit / miss callout under the bar. */
+.trail-callout {
+  animation: trail-callout 0.9s ease-out forwards;
+}
+
+@keyframes trail-callout {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trail-flash,
+  .trail-screen,
+  .trail-delta,
+  .trail-callout,
+  .blink {
+    animation: none;
+  }
+  .trail-delta {
+    opacity: 1;
+  }
+  .trail-btn {
+    transition: none;
   }
 }
