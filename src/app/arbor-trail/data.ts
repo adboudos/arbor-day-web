@@ -270,6 +270,67 @@ export const SHOP_ITEMS: ShopItem[] = [
     cost: 5,
     desc: "+8 dignity. Cheese and caramel, the Chicago handshake.",
   },
+  {
+    id: "handshake",
+    name: "The Chicago Handshake",
+    cost: 6,
+    desc: "+4 beers, -3 dignity. One random member gets drunker. You know what you did.",
+  },
+  {
+    id: "walker",
+    name: "Designated walker",
+    cost: 12,
+    desc: "One random member cannot wobble for 3 turns. A sacred oath, sworn over peanuts.",
+  },
+  {
+    id: "tamale",
+    name: "Tamale from the cart guy",
+    cost: 3,
+    desc: "+5 dignity, +1 beer. The tamale guy knows.",
+  },
+  {
+    id: "oldstyle",
+    name: "Old Style 6-pack",
+    cost: 9,
+    desc: "+5 beers. Chicago's beer, in bulk.",
+  },
+  {
+    id: "mints",
+    name: "Breath mints",
+    cost: 2,
+    desc: "+4 dignity. For the close talkers.",
+  },
+  {
+    id: "elburrito",
+    name: "Drunk burrito, El Burrito Mexicano",
+    cost: 7,
+    desc: "+12 dignity. The al pastor hits. Good omen.",
+    minTurn: 6,
+  },
+  {
+    id: "rickshaw",
+    name: "Rickshaw ride",
+    cost: 5,
+    desc: "-8 dignity, and somebody gets hurt. Bad omen.",
+  },
+  {
+    id: "fire",
+    name: "Chicago Fire tickets",
+    cost: 10,
+    desc: "+6 dignity, +2 beers. The Fire win 3-0. You take full credit. Good omen.",
+  },
+  {
+    id: "tacobell",
+    name: "Taco Bell",
+    cost: 4,
+    desc: "Fourthmeal. Usually saves the night. Usually.",
+  },
+  {
+    id: "dominos",
+    name: "Dominos pizza",
+    cost: 5,
+    desc: "+3 beers, -3 dignity. It is not Lou Malnati's. It is here now.",
+  },
 ];
 
 export const TOASTS: ToastOption[] = [

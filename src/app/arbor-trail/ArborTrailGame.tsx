@@ -132,6 +132,9 @@ function CrewList({ state }: { state: GameState }) {
             {i === 0 ? "> " : ""}
             {m.name}
             <span className="trail-dim text-xs"> ({getPersonality(m.personalityId).name.toLowerCase()})</span>
+            {state.walkerShield?.name === m.name && state.walkerShield.turns > 0 && (
+              <span className="text-xs"> [walker]</span>
+            )}
           </span>
           <span className={`trail-status ${STATUS_STYLE[m.status]}`}>{m.status}</span>
         </li>
