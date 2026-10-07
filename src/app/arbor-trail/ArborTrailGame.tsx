@@ -29,6 +29,9 @@ import {
   startPong,
   throwPong,
 } from "./engine";
+import TrailCanvas from "./TrailCanvas";
+import { isMuted, setMuted, sfx } from "./sound";
+import { fetchTrailScores, submitTrailScore } from "@/lib/supabase";
 import "./trail.css";
 
 function useTypewriter(text: string, speed = 12) {
@@ -194,7 +197,10 @@ function TitleScreen({ onStart }: { onStart: () => void }) {
       </div>
       <button
         type="button"
-        onClick={onStart}
+        onClick={() => {
+          sfx.click();
+          onStart();
+        }}
         className="trail-btn trail-btn-primary mx-auto block min-h-[48px] px-10 py-3 font-mono text-lg"
       >
         HIT THE TRAIL <span className="blink">_</span>
@@ -294,9 +300,10 @@ function SetupScreen({ onBegin }: { onBegin: (s: GameState) => void }) {
 
       <TrailButton
         primary
-        onClick={() =>
-          onBegin(createGame({ names, classId, paceId, rationId }))
-        }
+        onClick={() => {
+          sfx.click();
+          onBegin(createGame({ names, classId, paceId, rationId }));
+        }}
       >
         <span className="font-bold">DEPART AT 9 PM</span>
       </TrailButton>
@@ -313,9 +320,16 @@ function TravelScreen({
 }) {
   return (
     <div className="space-y-4">
+      <TrailCanvas turn={state.turn} crew={state.crew} />
       <StatusPanel state={state} />
       <GameLog lines={state.log} />
-      <TrailButton primary onClick={onAdvance}>
+      <TrailButton
+        primary
+        onClick={() => {
+          sfx.step();
+          onAdvance();
+        }}
+      >
         <span className="font-bold">CONTINUE DOWN THE TRAIL (15 MIN)</span>
       </TrailButton>
       <p className="m-0 text-center font-mono text-xs trail-dim">
@@ -336,6 +350,9 @@ function EventScreen({
 }) {
   const event = state.event;
   const tw = useTypewriter(event && !state.eventResult ? event.text : "", 10);
+  useEffect(() => {
+    sfx.event();
+  }, []);
   if (!event) return null;
   return (
     <div className="space-y-4">
@@ -370,7 +387,14 @@ function EventScreen({
             {event.choices.map((c, i) => {
               const cantAfford = c.cost !== undefined && state.money < c.cost;
               return (
-                <TrailButton key={i} onClick={() => onChoice(i)} disabled={cantAfford}>
+                <TrailButton
+                  key={i}
+                  onClick={() => {
+                    sfx.click();
+                    onChoice(i);
+                  }}
+                  disabled={cantAfford}
+                >
                   <span className="font-bold">
                     {i + 1}. {c.label}
                   </span>
@@ -438,6 +462,7 @@ function LandmarkScreen({
             <TrailButton
               key={i}
               onClick={() => {
+                sfx.toast();
                 onToast(i);
                 setToasting(false);
               }}
@@ -506,7 +531,14 @@ function ShopScreen({
         {items.map((item) => {
           const cantAfford = state.money < item.cost;
           return (
-            <TrailButton key={item.id} onClick={() => onBuy(item.id)} disabled={cantAfford}>
+            <TrailButton
+              key={item.id}
+              onClick={() => {
+                sfx.coin();
+                onBuy(item.id);
+              }}
+              disabled={cantAfford}
+            >
               <span className="font-bold">
                 {item.name} - ${item.cost}
               </span>
@@ -574,7 +606,14 @@ function PongScreen({
           Stop the marker in the zone, then throw.
         </p>
       </div>
-      <TrailButton primary onClick={() => onThrow(hit)}>
+      <TrailButton
+        primary
+        onClick={() => {
+          if (hit) sfx.hit();
+          else sfx.miss();
+          onThrow(hit);
+        }}
+      >
         <span className="text-center font-bold">THROW</span>
       </TrailButton>
     </div>
@@ -582,7 +621,37 @@ function PongScreen({
 }
 
 function HighScoreTable({ compact }: { compact?: boolean }) {
-  const [scores] = useState<HighScore[]>(() => loadScores());
+  const [scores, setScores] = useState<HighScore[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchTrailScores(8)
+      .then((rows) => {
+        if (!alive) return;
+        setScores(
+          rows.map((r) => ({
+            name: r.name,
+            score: r.score,
+            beers: r.beers,
+            className: r.class,
+            won: r.won,
+            date: r.created_at.slice(0, 10),
+          }))
+        );
+      })
+      .catch(() => {
+        if (alive) setScores(loadScores());
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (scores === null) {
+    return (
+      <p className="trail-dim m-0 text-center font-mono text-xs">
+        Consulting the trail spirits...
+      </p>
+    );
+  }
   if (scores.length === 0) {
     return (
       <p className="trail-dim m-0 text-center font-mono text-xs">
@@ -620,6 +689,11 @@ function OverScreen({
   const [saved, setSaved] = useState(false);
   const cls = getClass(state.classId);
 
+  useEffect(() => {
+    if (state.won) sfx.win();
+    else sfx.lose();
+  }, [state.won]);
+
   const handleSave = () => {
     if (saved) return;
     const entry: HighScore = {
@@ -631,6 +705,13 @@ function OverScreen({
       date: new Date().toISOString().slice(0, 10),
     };
     saveScore(entry);
+    submitTrailScore({
+      name: entry.name,
+      score: entry.score,
+      beers: entry.beers,
+      class: cls.name,
+      won: entry.won,
+    }).catch(() => undefined);
     setSaved(true);
   };
 
@@ -713,6 +794,7 @@ function OverScreen({
 
 export default function ArborTrailGame() {
   const [state, setState] = useState<GameState | null>(null);
+  const [muted, setMutedState] = useState<boolean>(() => isMuted());
 
   const continueFromEvent = () =>
     setState((s) => {
@@ -732,13 +814,29 @@ export default function ArborTrailGame() {
         {state && state.screen !== "title" && state.screen !== "setup" && (
           <div className="mb-4 flex items-center justify-between font-mono text-xs trail-dim">
             <span>THE ARBOR DAY TRAIL</span>
-            <button
-              type="button"
-              onClick={() => setState(null)}
-              className="trail-dim min-h-[44px] px-2 underline"
-            >
-              quit to title
-            </button>
+            <span className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const m = !muted;
+                  setMuted(m);
+                  setMutedState(m);
+                  if (!m) sfx.click();
+                }}
+                aria-pressed={muted}
+                aria-label={muted ? "Unmute sound" : "Mute sound"}
+                className="trail-dim min-h-[44px] px-2 underline"
+              >
+                {muted ? "sound off" : "sound on"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setState(null)}
+                className="trail-dim min-h-[44px] px-2 underline"
+              >
+                quit to title
+              </button>
+            </span>
           </div>
         )}
         {state?.screen === "travel" && (

@@ -1,8 +1,9 @@
 /**
  * Supabase backend for the Arbor Day site.
  *
- * Tables: editions, photos, ideas, hall_of_fame, photo_wall
- * (schemas in ~/workspace/arbor-day-supabase/schema.sql and migrate-v2.sql).
+ * Tables: editions, photos, ideas, hall_of_fame, photo_wall, trail_scores
+ * (schemas in ~/workspace/arbor-day-supabase/schema.sql, migrate-v2.sql,
+ * and migrate-trail-scores.sql).
  * Timeline photos live in the public `history-photos` bucket;
  * guest uploads go to the public `photo-wall` bucket.
  *
@@ -259,5 +260,38 @@ export async function createPhotoWallEntry(e: {
   await sb("/rest/v1/photo_wall", {
     method: "POST",
     body: JSON.stringify({ ...e, approved: true }),
+  });
+}
+
+/* ---------------- arbor trail leaderboard ---------------- */
+
+export interface TrailScoreRow {
+  id: string;
+  name: string;
+  score: number;
+  beers: number;
+  class: string;
+  won: boolean;
+  created_at: string;
+}
+
+/** Top global trail scores, highest first. */
+export async function fetchTrailScores(limit = 8): Promise<TrailScoreRow[]> {
+  const res = await sb(
+    `/rest/v1/trail_scores?select=*&order=score.desc&limit=${limit}`,
+  );
+  return (await res.json()) as TrailScoreRow[];
+}
+
+export async function submitTrailScore(s: {
+  name: string;
+  score: number;
+  beers: number;
+  class: string;
+  won: boolean;
+}): Promise<void> {
+  await sb("/rest/v1/trail_scores", {
+    method: "POST",
+    body: JSON.stringify(s),
   });
 }

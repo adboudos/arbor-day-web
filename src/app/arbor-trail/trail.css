@@ -143,6 +143,14 @@
   box-shadow: 0 0 10px rgba(255, 176, 0, 0.8);
 }
 
+.trail-canvas {
+  image-rendering: pixelated;
+  border: 1px solid rgba(255, 176, 0, 0.35);
+  border-radius: 8px;
+  background: #0d0a06;
+  display: block;
+}
+
 .blink {
   animation: trail-blink 1s steps(2, start) infinite;
 }
