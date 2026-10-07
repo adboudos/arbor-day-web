@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 import SiteNav from "@/components/SiteNav";
 
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
   description: "Plant a tree. Raise a glass. Friday, April 30, 2027. Venue to be Announced.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"

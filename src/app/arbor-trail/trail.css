@@ -1,0 +1,162 @@
+/* CRT terminal aesthetic for The Arbor Day Trail. Amber monochrome. */
+
+.trail-root {
+  background: #0d0a06;
+  color: #ffb000;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.trail-scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.22) 3px,
+    rgba(0, 0, 0, 0.22) 4px
+  );
+}
+
+.trail-glow {
+  text-shadow: 0 0 10px rgba(255, 176, 0, 0.55);
+}
+
+.trail-dim {
+  color: rgba(255, 176, 0, 0.55);
+}
+
+.trail-danger {
+  color: #ff5a3c;
+  text-shadow: 0 0 10px rgba(255, 90, 60, 0.55);
+}
+
+.trail-panel {
+  border: 1px solid rgba(255, 176, 0, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 176, 0, 0.04);
+  box-shadow: inset 0 0 24px rgba(255, 176, 0, 0.05);
+}
+
+.trail-btn {
+  border: 1px solid rgba(255, 176, 0, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 176, 0, 0.06);
+  color: #ffb000;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.trail-btn:hover:not(:disabled) {
+  background: rgba(255, 176, 0, 0.14);
+}
+
+.trail-btn:active:not(:disabled) {
+  background: rgba(255, 176, 0, 0.2);
+}
+
+.trail-btn-primary {
+  background: rgba(255, 176, 0, 0.16);
+  border-color: #ffb000;
+}
+
+.trail-btn-active {
+  background: rgba(255, 176, 0, 0.22);
+  border-color: #ffb000;
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.25);
+}
+
+.trail-input {
+  border: 1px solid rgba(255, 176, 0, 0.45);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffb000;
+}
+
+.trail-input::placeholder {
+  color: rgba(255, 176, 0, 0.35);
+}
+
+.trail-input:focus {
+  outline: 2px solid #ffb000;
+  outline-offset: 2px;
+}
+
+.trail-bar {
+  border: 1px solid rgba(255, 176, 0, 0.35);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.trail-bar-fill {
+  background: #ffb000;
+  box-shadow: 0 0 8px rgba(255, 176, 0, 0.6);
+  transition: width 0.3s ease;
+}
+
+.trail-log {
+  border: 1px solid rgba(255, 176, 0, 0.25);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.75rem;
+}
+
+.trail-log p:last-child {
+  color: #ffd97a;
+}
+
+.trail-status {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.trail-status-sober {
+  color: #7dd87d;
+}
+
+.trail-status-tipsy {
+  color: #ffb000;
+}
+
+.trail-status-drunk {
+  color: #ff8a3c;
+}
+
+.trail-status-gone {
+  color: rgba(255, 176, 0, 0.35);
+}
+
+.trail-tombstone {
+  border: 1px solid rgba(255, 176, 0, 0.35);
+  border-radius: 8px 8px 4px 4px;
+  background: rgba(255, 176, 0, 0.05);
+}
+
+.trail-target {
+  background: rgba(125, 216, 125, 0.25);
+  border-left: 1px solid #7dd87d;
+  border-right: 1px solid #7dd87d;
+}
+
+.trail-marker {
+  background: #ffb000;
+  box-shadow: 0 0 10px rgba(255, 176, 0, 0.8);
+}
+
+.trail-canvas {
+  image-rendering: pixelated;
+  border: 1px solid rgba(255, 176, 0, 0.35);
+  border-radius: 8px;
+  background: #0d0a06;
+  display: block;
+}
+
+.blink {
+  animation: trail-blink 1s steps(2, start) infinite;
+}
+
+@keyframes trail-blink {
+  to {
+    visibility: hidden;
+  }
+}
