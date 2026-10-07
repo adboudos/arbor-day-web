@@ -286,6 +286,23 @@ export const TOMBSTONE_CAUSES = [
 
 export const DEFAULT_NAMES = ["Quinn", "Jason", "Boudos", "Rando", "Plus-One"];
 
+export interface Achievement {
+  id: string;
+  name: string;
+  desc: string;
+}
+
+export const ACHIEVEMENTS: Achievement[] = [
+  { id: "conqueror", name: "Trail Conqueror", desc: "Reach midnight with 50 beers." },
+  { id: "sending-survivor", name: "Sending It Survivor", desc: "Win on Sending It pace." },
+  { id: "untouchable", name: "Untouchable", desc: "Win with the whole crew standing." },
+  { id: "rookie-year", name: "Rookie of the Year", desc: "Win as The Rookie." },
+  { id: "exact-50", name: "Exactly 50", desc: "Finish with exactly 50 beers." },
+  { id: "high-roller", name: "High Roller", desc: "Win with $100 still in pocket." },
+  { id: "dignified", name: "Dignified", desc: "Win with 90+ dignity." },
+  { id: "fumes", name: "Running on Fumes", desc: "Win with under 25 dignity." },
+];
+
 export const EVENTS: TrailEvent[] = [
   {
     id: "karaoke",
@@ -1106,6 +1123,471 @@ export const EVENTS: TrailEvent[] = [
           text: "It was that far. It was much farther than that.",
           dignity: -5,
           riskDrunk: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "kincades-story",
+    text: "Someone starts telling the 2023 Kincade's story. You were there. You remember it differently.",
+    minTurn: 3,
+    choices: [
+      {
+        label: "Correct the record",
+        sub: "The truth matters",
+        result: {
+          text: "Your version checks out. The table concedes.",
+          dignity: 8,
+          chance: 0.5,
+          alt: {
+            text: "Your version was somehow worse. The table will not forget.",
+            dignity: -5,
+          },
+        },
+      },
+      {
+        label: "Let them cook",
+        sub: "Generosity",
+        result: {
+          text: "Their version gets better every year. You sip and smile.",
+          dignity: 4,
+          beers: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "sluggers-backbar",
+    text: "The Sluggers back bar. It smells like 2024 in here.",
+    minTurn: 5,
+    choices: [
+      {
+        label: "Order the 2024 order",
+        sub: "Muscle memory",
+        result: {
+          text: "The bartender nods. Some things never change.",
+          beers: 2,
+          dignity: 3,
+        },
+      },
+      {
+        label: "Try something new",
+        sub: "Growth",
+        result: {
+          text: "A new classic is born. The crew approves.",
+          dignity: 6,
+          chance: 0.5,
+          alt: {
+            text: "A mistake in a glass. You finish it anyway.",
+            dignity: -4,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "easybar-ghost",
+    text: "A cold spot near the back room. The ghost of minimum spends past.",
+    minTurn: 7,
+    choices: [
+      {
+        label: "Pay respects",
+        sub: "Solemn",
+        result: {
+          text: "You bow your head. The ghost appreciates the gesture.",
+          dignity: 5,
+        },
+      },
+      {
+        label: "Taunt the ghost",
+        sub: "Audacity",
+        result: {
+          text: "The ghost respects audacity. The temperature returns to normal.",
+          dignity: 10,
+          chance: 0.4,
+          alt: {
+            text: "The ghost does not respect audacity. It gets colder.",
+            dignity: -8,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "fieldhouse-nod",
+    text: "The Field House bartender nods at you. She remembers the full buyout.",
+    minTurn: 9,
+    choices: [
+      {
+        label: "Nod back",
+        sub: "Mutual respect",
+        result: {
+          text: "Respect recognized. A round appears. You do not ask questions.",
+          dignity: 6,
+          beers: 2,
+        },
+      },
+      {
+        label: "Ask for the usual",
+        sub: "Confidence",
+        result: {
+          text: "She pours it before you finish the sentence. Legendary.",
+          beers: 2,
+          dignity: 4,
+          chance: 0.6,
+          alt: {
+            text: "She does not remember you at all.",
+            dignity: -6,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "deepdish",
+    text: "Someone says deep dish is not pizza.",
+    choices: [
+      {
+        label: "Agree (tavern-style forever)",
+        sub: "The correct take",
+        result: {
+          text: "Tavern-style: crispy, square-cut, perfect. The table agrees.",
+          dignity: 5,
+        },
+      },
+      {
+        label: "Defend deep dish",
+        sub: "Controversial",
+        result: {
+          text: "A passionate defense. Even the skeptics applaud.",
+          dignity: 8,
+          chance: 0.5,
+          alt: {
+            text: "The table turns. A dark day for casserole discourse.",
+            dignity: -5,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "ltrain",
+    text: "You hear the L rumble past outside.",
+    choices: [
+      {
+        label: "Wave at the train",
+        sub: "Wholesome",
+        result: {
+          text: "Someone waved back. Probably.",
+          dignity: 3,
+        },
+      },
+      {
+        label: "Race it to the next stop",
+        sub: "Athletic",
+        result: {
+          text: "The train won. The train always wins.",
+          dignity: -5,
+          riskDrunk: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "malort",
+    text: "Someone produces a bottle of Malort.",
+    choices: [
+      {
+        label: "Take the shot",
+        sub: "Chicago's handshake",
+        result: {
+          text: "You did not flinch. Everyone saw you flinch a little.",
+          beers: 3,
+          dignity: -8,
+          riskDrunk: 1,
+        },
+      },
+      {
+        label: "Pass with honor",
+        sub: "Self-preservation",
+        result: {
+          text: "You kept your dignity. It barely counts, but it counts.",
+          dignity: 6,
+        },
+      },
+    ],
+  },
+  {
+    id: "duet",
+    text: "The DJ is back. This time it is a duet. He points at your crew.",
+    minTurn: 6,
+    choices: [
+      {
+        label: "Take the duet",
+        sub: "Harmony",
+        result: {
+          text: "Flawless harmonies. The bar demands an encore. You decline like pros.",
+          dignity: 12,
+          beers: 3,
+          chance: 0.6,
+          alt: {
+            text: "You sang different songs. At the same time.",
+            dignity: -8,
+          },
+        },
+      },
+      {
+        label: "Hide",
+        sub: "Under the table",
+        result: {
+          text: "The table is not as big as you remembered.",
+          dignity: -3,
+        },
+      },
+    ],
+  },
+  {
+    id: "coatcheck",
+    text: "The coat check line is enormous.",
+    choices: [
+      {
+        label: "Wait it out",
+        sub: "Patience",
+        result: {
+          text: "Twenty minutes later, coat in hand. A triumph of persistence.",
+          dignity: 2,
+        },
+      },
+      {
+        label: "Carry everything",
+        sub: "Independence",
+        result: {
+          text: "You are now wearing three jackets. One is not yours.",
+          dignity: -5,
+        },
+      },
+    ],
+  },
+  {
+    id: "atm",
+    text: "The ATM charges $4.50.",
+    choices: [
+      {
+        label: "Pay it",
+        sub: "Desperate times",
+        result: {
+          text: "Desperate times call for desperate fees.",
+          money: -5,
+        },
+      },
+      {
+        label: "Venmo the bartender",
+        sub: "Modern solutions",
+        result: {
+          text: "The bartender accepts. The future is now.",
+          dignity: 3,
+        },
+      },
+    ],
+  },
+  {
+    id: "trivia",
+    text: "The bar is doing trivia. The category is trees.",
+    choices: [
+      {
+        label: "Join a team",
+        sub: "It is Arbor Day, after all",
+        result: {
+          text: "You knew every answer. The team carries you on their shoulders. Metaphorically.",
+          dignity: 10,
+          beers: 2,
+          chance: 0.6,
+          alt: {
+            text: "You blanked on 'oak'. OAK.",
+            dignity: -4,
+          },
+        },
+      },
+      {
+        label: "Heckle",
+        sub: "From the back",
+        result: {
+          text: "The trivia host has heard it all before. You are escorted back to your table.",
+          dignity: -6,
+        },
+      },
+    ],
+  },
+  {
+    id: "slowsong",
+    text: "A slow song comes on.",
+    choices: [
+      {
+        label: "Dance",
+        sub: "Sway",
+        result: {
+          text: "A gentle sway. The night softens for a moment.",
+          dignity: 6,
+          beers: 1,
+        },
+      },
+      {
+        label: "Too crowded",
+        sub: "Wallflower",
+        result: {
+          text: "You watch from the bar. The bar is also nice.",
+          dignity: 2,
+        },
+      },
+    ],
+  },
+  {
+    id: "birthday3",
+    text: "Another birthday at another table. This is the third tonight.",
+    choices: [
+      {
+        label: "Sing again",
+        sub: "Commitment",
+        result: {
+          text: "You know all the words by now. The birthday table adopts you.",
+          dignity: 4,
+          beers: 1,
+        },
+      },
+      {
+        label: "You have done your part",
+        sub: "Rest",
+        result: {
+          text: "You hum along from your seat. Enough.",
+          dignity: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "nightcap",
+    text: "Debate: is a nightcap a good idea?",
+    choices: [
+      {
+        label: "Yes",
+        sub: "One more",
+        result: {
+          text: "One more. Famous last words, deliciously.",
+          beers: 2,
+          riskDrunk: 1,
+        },
+      },
+      {
+        label: "No",
+        sub: "Wisdom",
+        result: {
+          text: "The crew respects the call. Waters all around.",
+          dignity: 6,
+          soberUp: true,
+        },
+      },
+    ],
+  },
+  {
+    id: "lowbattery",
+    text: "Your phone is at 4%.",
+    minTurn: 8,
+    choices: [
+      {
+        label: "Find an outlet",
+        sub: "The hunt",
+        result: {
+          text: "You guarded a wall outlet for 20 minutes. It charged to 11%.",
+          dignity: -5,
+        },
+      },
+      {
+        label: "Airplane mode and pray",
+        sub: "Faith",
+        result: {
+          text: "The phone survives on hope and low power mode.",
+          dignity: 3,
+        },
+      },
+    ],
+  },
+  {
+    id: "regular",
+    text: "A bar regular tells you about the old days.",
+    choices: [
+      {
+        label: "Listen",
+        sub: "Wisdom",
+        result: {
+          text: "Every bar has a historian. Every historian buys a round.",
+          dignity: 5,
+          beers: 1,
+        },
+      },
+      {
+        label: "One-up him",
+        sub: "Bold",
+        result: {
+          text: "Your story was better. He admits it. The bar applauds.",
+          dignity: 8,
+          chance: 0.4,
+          alt: {
+            text: "Your story was not better. The bar is silent.",
+            dignity: -8,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "lasttrain",
+    text: "Last train leaves in 20 minutes.",
+    minTurn: 10,
+    choices: [
+      {
+        label: "Run for it",
+        sub: "Sprint",
+        result: {
+          text: "You made it with seconds to spare. Athletic excellence.",
+          dignity: 8,
+          chance: 0.5,
+          alt: {
+            text: "You watched it pull away. The platform is cold and judgmental.",
+            dignity: -5,
+            riskDrunk: 1,
+          },
+        },
+      },
+      {
+        label: "Commit to the night",
+        sub: "No regrets",
+        result: {
+          text: "The night chose you. The night provides.",
+          beers: 2,
+        },
+      },
+    ],
+  },
+  {
+    id: "pact",
+    text: "The crew makes a pact: same time next year.",
+    minTurn: 11,
+    choices: [
+      {
+        label: "Seal it with a shot",
+        sub: "Tradition",
+        result: {
+          text: "A sacred bond, sealed in questionable liquor.",
+          beers: 3,
+          dignity: 8,
+        },
+      },
+      {
+        label: "Just nod",
+        sub: "Quiet vow",
+        result: {
+          text: "A nod says everything. The pact holds.",
+          dignity: 4,
         },
       },
     ],

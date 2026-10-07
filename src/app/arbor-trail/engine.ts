@@ -1,6 +1,7 @@
 // Pure game logic for The Arbor Day Trail. No UI here, only state in, state out.
 
 import {
+  ACHIEVEMENTS,
   ChoiceResult,
   CLASSES,
   ClassId,
@@ -29,6 +30,7 @@ export type Screen =
   | "landmark"
   | "shop"
   | "pong"
+  | "roulette"
   | "over";
 
 export interface Tombstone {
@@ -54,6 +56,10 @@ export interface GameState {
   pongThrowsLeft: number;
   pongHits: number;
   pongUsed: boolean;
+  rouletteBad: number;
+  rouletteTaken: number[];
+  rouletteUsed: boolean;
+  rouletteResult: string | null;
   pretzelTurns: number;
   over: boolean;
   won: boolean;
@@ -127,6 +133,10 @@ export function createGame(input: SetupInput): GameState {
     pongThrowsLeft: 0,
     pongHits: 0,
     pongUsed: false,
+    rouletteBad: 0,
+    rouletteTaken: [],
+    rouletteUsed: false,
+    rouletteResult: null,
     pretzelTurns: 0,
     over: false,
     won: false,
@@ -270,6 +280,8 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     landmark: null,
     landmarkResult: null,
     pongUsed: false,
+    rouletteUsed: false,
+    rouletteResult: null,
   };
 
   if (rest) {
@@ -432,6 +444,106 @@ export function buyItem(state: GameState, itemId: string): GameState {
 
 export function shopItemsForTurn(turn: number) {
   return SHOP_ITEMS.filter((i) => (i.minTurn ?? 0) <= turn);
+}
+
+/* ---------------- shot roulette ---------------- */
+
+export function startRoulette(state: GameState): GameState {
+  return {
+    ...state,
+    screen: "roulette",
+    rouletteBad: rand(6),
+    rouletteTaken: [],
+    rouletteResult: null,
+  };
+}
+
+export function takeRouletteShot(state: GameState, slot: number): GameState {
+  if (state.rouletteTaken.includes(slot)) return state;
+  const taken = [...state.rouletteTaken, slot];
+  if (slot === state.rouletteBad) {
+    let next: GameState = {
+      ...state,
+      rouletteTaken: taken,
+      rouletteUsed: true,
+      dignity: Math.max(0, state.dignity - 5),
+      rouletteResult: "THE BAD ONE. The room tilts sideways.",
+      log: pushLog(state.log, "Shot roulette: THE BAD ONE. The room tilts sideways."),
+    };
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+    next = checkEnd(next);
+    if (next.over) return { ...next, screen: "over" };
+    return { ...next, screen: "roulette" };
+  }
+  const good = taken.length;
+  let next: GameState = {
+    ...state,
+    rouletteTaken: taken,
+    beers: state.beers + 2,
+    log: pushLog(state.log, `Shot roulette: clean. +2 beers (${good}/5).`),
+  };
+  if (good >= 5) {
+    next = {
+      ...next,
+      rouletteUsed: true,
+      dignity: Math.min(100, next.dignity + 5),
+      rouletteResult: "All five clean. Daredevil. +5 dignity.",
+      log: pushLog(next.log, "Shot roulette: all five clean. Daredevil."),
+    };
+  }
+  return next;
+}
+
+export function leaveRoulette(state: GameState): GameState {
+  if (state.over) return { ...state, screen: "over" };
+  return { ...state, screen: "landmark", rouletteResult: null };
+}
+
+/* ---------------- achievements ---------------- */
+
+const ACH_KEY = "arbor-trail-achievements";
+
+export function loadAchievements(): string[] {
+  try {
+    const raw = localStorage.getItem(ACH_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Achievement ids earned by this finished run. */
+export function evaluateAchievements(state: GameState): string[] {
+  const ids: string[] = [];
+  if (!state.over) return ids;
+  if (state.won) {
+    ids.push("conqueror");
+    if (state.paceId === "sending") ids.push("sending-survivor");
+    if (state.tombstones.length === 0) ids.push("untouchable");
+    if (state.classId === "rookie") ids.push("rookie-year");
+    if (state.beers === GOAL_BEERS) ids.push("exact-50");
+    if (state.money >= 100) ids.push("high-roller");
+    if (state.dignity >= 90) ids.push("dignified");
+    if (state.dignity < 25) ids.push("fumes");
+  }
+  return ids.filter((id) => ACHIEVEMENTS.some((a) => a.id === id));
+}
+
+/** Merge newly earned ids into storage. Returns ids that are new this run. */
+export function unlockAchievements(ids: string[]): string[] {
+  const prev = loadAchievements();
+  const fresh = ids.filter((id) => !prev.includes(id));
+  if (fresh.length > 0) {
+    try {
+      localStorage.setItem(ACH_KEY, JSON.stringify([...prev, ...fresh]));
+    } catch {
+      // ignore
+    }
+  }
+  return fresh;
 }
 
 export interface HighScore {

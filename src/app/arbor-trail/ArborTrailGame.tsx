@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  ACHIEVEMENTS,
   CLASSES,
   DEFAULT_NAMES,
   GOAL_BEERS,
@@ -14,6 +15,7 @@ import {
   advanceTurn,
   buyItem,
   createGame,
+  evaluateAchievements,
   formatClock,
   GameState,
   getClass,
@@ -22,12 +24,17 @@ import {
   giveToast,
   HighScore,
   leaveLandmark,
+  leaveRoulette,
+  loadAchievements,
   loadScores,
   resolveChoice,
   saveScore,
   shopItemsForTurn,
   startPong,
+  startRoulette,
+  takeRouletteShot,
   throwPong,
+  unlockAchievements,
 } from "./engine";
 import TrailCanvas from "./TrailCanvas";
 import { isMuted, setMuted, sfx } from "./sound";
@@ -174,6 +181,26 @@ const MUG = `      .-""-.
       |____||
        \\__/`;
 
+function BadgeCase() {
+  const [earned] = useState<string[]>(() => loadAchievements());
+  if (earned.length === 0) return null;
+  return (
+    <div className="trail-panel mx-auto w-full max-w-md p-4">
+      <p className="trail-glow m-0 mb-2 text-center font-mono text-sm font-bold">
+        BADGES ({earned.length}/{ACHIEVEMENTS.length})
+      </p>
+      <ul className="m-0 list-none space-y-1 p-0 font-mono text-xs">
+        {ACHIEVEMENTS.filter((a) => earned.includes(a.id)).map((a) => (
+          <li key={a.id} className="flex justify-between gap-2">
+            <span className="font-bold">{a.name}</span>
+            <span className="trail-dim text-right">{a.desc}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function TitleScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="space-y-6 text-center">
@@ -206,6 +233,7 @@ function TitleScreen({ onStart }: { onStart: () => void }) {
         HIT THE TRAIL <span className="blink">_</span>
       </button>
       <HighScoreTable compact />
+      <BadgeCase />
     </div>
   );
 }
@@ -421,6 +449,7 @@ function LandmarkScreen({
   state,
   onToast,
   onPong,
+  onRoulette,
   onShop,
   onRest,
   onLeave,
@@ -428,6 +457,7 @@ function LandmarkScreen({
   state: GameState;
   onToast: (i: number) => void;
   onPong: () => void;
+  onRoulette: () => void;
   onShop: () => void;
   onRest: () => void;
   onLeave: () => void;
@@ -488,20 +518,27 @@ function LandmarkScreen({
               <span className="trail-dim text-xs">3 throws. +2 beers per hit. Once per stop.</span>
             </TrailButton>
           )}
+          {!state.rouletteUsed && (
+            <TrailButton onClick={onRoulette}>
+              <span className="font-bold">3. Shot roulette</span>
+              <br />
+              <span className="trail-dim text-xs">Six shots, one bad. Push your luck. Once per stop.</span>
+            </TrailButton>
+          )}
           {lm.shop && (
             <TrailButton onClick={onShop}>
-              <span className="font-bold">3. Browse the shop</span>
+              <span className="font-bold">4. Browse the shop</span>
               <br />
               <span className="trail-dim text-xs">Supplies for the trail.</span>
             </TrailButton>
           )}
           <TrailButton onClick={onRest}>
-            <span className="font-bold">4. Rest the crew</span>
+            <span className="font-bold">5. Rest the crew</span>
             <br />
             <span className="trail-dim text-xs">Skip drinking a turn. Sober up, +10 dignity.</span>
           </TrailButton>
           <TrailButton primary onClick={onLeave}>
-            <span className="font-bold">5. Keep moving</span>
+            <span className="font-bold">6. Keep moving</span>
           </TrailButton>
         </div>
       )}
@@ -620,6 +657,69 @@ function PongScreen({
   );
 }
 
+function RouletteScreen({
+  state,
+  onTake,
+  onLeave,
+}: {
+  state: GameState;
+  onTake: (slot: number) => void;
+  onLeave: () => void;
+}) {
+  const done = state.rouletteUsed;
+  return (
+    <div className="space-y-4">
+      <div className="trail-panel space-y-1 p-4 text-center">
+        <h2 className="trail-glow m-0 font-mono text-xl font-bold">SHOT ROULETTE</h2>
+        <p className="trail-dim m-0 font-mono text-sm">
+          Six shots. One is the bad one. +2 beers per clean shot.
+          <br />
+          Take all five clean for a Daredevil bonus. Walk away anytime.
+        </p>
+      </div>
+      <div className="trail-panel p-4">
+        <div className="grid grid-cols-3 gap-3">
+          {[0, 1, 2, 3, 4, 5].map((slot) => {
+            const taken = state.rouletteTaken.includes(slot);
+            const isBad = done && slot === state.rouletteBad;
+            return (
+              <button
+                key={slot}
+                type="button"
+                disabled={taken || done}
+                onClick={() => {
+                  sfx.click();
+                  onTake(slot);
+                }}
+                aria-label={taken ? `Shot ${slot + 1}, taken` : `Take shot ${slot + 1}`}
+                className={`flex min-h-[64px] items-center justify-center rounded-lg border font-mono text-2xl ${
+                  isBad
+                    ? "trail-danger border-current"
+                    : taken
+                      ? "trail-dim opacity-40"
+                      : "trail-btn"
+                }`}
+              >
+                {isBad ? "X" : taken ? "-" : "?"}
+              </button>
+            );
+          })}
+        </div>
+        {state.rouletteResult && (
+          <p className="trail-glow mb-0 mt-4 text-center font-mono text-sm">
+            {state.rouletteResult}
+          </p>
+        )}
+      </div>
+      <TrailButton primary onClick={onLeave}>
+        <span className="font-bold">
+          {done ? "BACK TO THE LANDMARK" : "WALK AWAY"}
+        </span>
+      </TrailButton>
+    </div>
+  );
+}
+
 function HighScoreTable({ compact }: { compact?: boolean }) {
   const [scores, setScores] = useState<HighScore[] | null>(null);
   useEffect(() => {
@@ -687,6 +787,9 @@ function OverScreen({
 }) {
   const [name, setName] = useState(state.crew[0]?.name ?? "Traveler");
   const [saved, setSaved] = useState(false);
+  const [newBadges] = useState<string[]>(() =>
+    unlockAchievements(evaluateAchievements(state))
+  );
   const cls = getClass(state.classId);
 
   useEffect(() => {
@@ -755,6 +858,20 @@ function OverScreen({
               <p className="m-0 font-bold">Here lies {t.name}</p>
               <p className="trail-dim m-0 text-xs">Cause: {t.cause}</p>
             </div>
+          ))}
+        </div>
+      )}
+
+      {newBadges.length > 0 && (
+        <div className="trail-panel mx-auto w-full max-w-md space-y-1 p-4">
+          <p className="trail-glow m-0 mb-2 text-center font-mono text-sm font-bold">
+            NEW BADGES
+          </p>
+          {ACHIEVEMENTS.filter((a) => newBadges.includes(a.id)).map((a) => (
+            <p key={a.id} className="m-0 font-mono text-xs">
+              <span className="font-bold">{a.name}</span>
+              <span className="trail-dim"> - {a.desc}</span>
+            </p>
           ))}
         </div>
       )}
@@ -854,6 +971,7 @@ export default function ArborTrailGame() {
             state={state}
             onToast={(i) => setState((s) => (s ? giveToast(s, i) : s))}
             onPong={() => setState((s) => (s ? startPong(s) : s))}
+            onRoulette={() => setState((s) => (s ? startRoulette(s) : s))}
             onShop={() => setState((s) => (s ? { ...s, screen: "shop" as const } : s))}
             onRest={() => setState((s) => (s ? advanceTurn(s, true) : s))}
             onLeave={() => setState((s) => (s ? leaveLandmark(s) : s))}
@@ -871,6 +989,13 @@ export default function ArborTrailGame() {
             throwsLeft={state.pongThrowsLeft}
             hits={state.pongHits}
             onThrow={(hit) => setState((s) => (s ? throwPong(s, hit) : s))}
+          />
+        )}
+        {state?.screen === "roulette" && (
+          <RouletteScreen
+            state={state}
+            onTake={(slot) => setState((s) => (s ? takeRouletteShot(s, slot) : s))}
+            onLeave={() => setState((s) => (s ? leaveRoulette(s) : s))}
           />
         )}
         {state?.screen === "over" && (
