@@ -77,6 +77,10 @@ export interface GameState {
   detourResult: string | null;
   minigame: MinigameKind | null;
   walkerShield: { name: string; turns: number } | null;
+  pongResult: string | null;
+  shopStock: string[] | null;
+  seenEventIds: string[];
+  seenBarNames: string[];
 }
 
 export interface SetupInput {
@@ -125,10 +129,23 @@ function pushLog(log: string[], line: string): string[] {
   return [...log.slice(-40), line];
 }
 
+/** Two crew members with the same name break per-member effects, so suffix repeats. */
+function uniqueNames(names: string[]): string[] {
+  const seen = new Map<string, number>();
+  return names.map((n) => {
+    const key = n.toLowerCase();
+    const count = (seen.get(key) ?? 0) + 1;
+    seen.set(key, count);
+    return count === 1 ? n : `${n.slice(0, 14)} ${count}`;
+  });
+}
+
 export function createGame(input: SetupInput): GameState {
   const cls = getClass(input.classId);
-  const names = input.names.map((n, i) =>
-    n.trim() === "" ? DEFAULT_NAMES[i] ?? `Friend ${i + 1}` : n.trim().slice(0, 16)
+  const names = uniqueNames(
+    input.names.map((n, i) =>
+      n.trim() === "" ? DEFAULT_NAMES[i] ?? `Friend ${i + 1}` : n.trim().slice(0, 16)
+    )
   );
   const personalityIds = shuffled(PERSONALITIES.map((p) => p.id));
   const crew: CrewMember[] = names.map((name, i) => ({
@@ -175,6 +192,10 @@ export function createGame(input: SetupInput): GameState {
     detourResult: null,
     minigame: null,
     walkerShield: null,
+    pongResult: null,
+    shopStock: null,
+    seenEventIds: [],
+    seenBarNames: [],
   };
 }
 
@@ -319,15 +340,24 @@ function endGame(state: GameState, won: boolean, reason: string): GameState {
 function rollEvent(state: GameState): GameState {
   const pace = getPace(state.paceId);
   if (Math.random() > pace.eventChance) return { ...state, screen: "travel" };
-  const pool = EVENTS.filter(
-    (e) => (e.minTurn ?? 0) <= state.turn && state.event?.id !== e.id
-  );
+  const eligible = EVENTS.filter((e) => (e.minTurn ?? 0) <= state.turn);
+  const fresh = eligible.filter((e) => !state.seenEventIds.includes(e.id));
+  const pool = fresh.length > 0 ? fresh : eligible;
   if (pool.length === 0) return { ...state, screen: "travel" };
   const event = pick(pool);
-  return { ...state, screen: "event", event, eventResult: null };
+  return {
+    ...state,
+    screen: "event",
+    event,
+    eventResult: null,
+    seenEventIds: [...state.seenEventIds, event.id],
+  };
 }
 
 export function advanceTurn(state: GameState, rest: boolean): GameState {
+  // Only the travel and landmark screens move the clock. A stray double click
+  // on another screen must not burn a turn.
+  if (state.over || (state.screen !== "travel" && state.screen !== "landmark")) return state;
   const pace = getPace(state.paceId);
   const ration = getRation(state.rationId);
   let next: GameState = {
@@ -338,6 +368,8 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     landmark: null,
     landmarkResult: null,
     pongUsed: false,
+    pongResult: null,
+    shopStock: null,
     toastUsed: false,
     rouletteUsed: false,
     rouletteResult: null,
@@ -424,11 +456,14 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
 
   // A dive bar detour precludes a regular event: one drama per turn.
   if (Math.random() < 0.22) {
+    const freshBars = DIVE_BARS.filter((b) => !next.seenBarNames.includes(b.name));
+    const bar = pick(freshBars.length > 0 ? freshBars : DIVE_BARS);
     return {
       ...next,
       screen: "detour",
-      detour: pick(DIVE_BARS),
+      detour: bar,
       detourResult: null,
+      seenBarNames: [...next.seenBarNames, bar.name],
       log: pushLog(next.log, "A dive bar glows down a side street. The crew slows..."),
     };
   }
@@ -447,7 +482,7 @@ export interface MinigameResult {
 
 export function takeDetour(state: GameState): GameState {
   const bar = state.detour;
-  if (!bar) return state;
+  if (!bar || state.screen !== "detour" || state.detourResult) return state;
   if (bar.cost && state.money < bar.cost) return state;
 
   // Mini-game bars hand off to the game screen.
@@ -503,6 +538,7 @@ export function takeDetour(state: GameState): GameState {
 }
 
 export function resolveMinigame(state: GameState, r: MinigameResult): GameState {
+  if (state.screen !== "minigame") return state;
   let next: GameState = {
     ...state,
     beers: state.beers + r.beers,
@@ -521,7 +557,7 @@ export function resolveMinigame(state: GameState, r: MinigameResult): GameState 
 }
 
 export function resolveRoast(state: GameState, choice: number): GameState {
-  if (!state.detour || state.detour.kind !== "roast") return state;
+  if (!state.detour || state.detour.kind !== "roast" || state.detourResult) return state;
   let next: GameState = { ...state };
   let result: string;
   if (choice === 0) {
@@ -556,18 +592,20 @@ export function resolveRoast(state: GameState, choice: number): GameState {
 
 export function skipDetour(state: GameState): GameState {
   if (!state.detour) return state;
-  const next = {
+  // Only claim the crew walked past when they never went in.
+  return {
     ...state,
     detour: null,
     detourResult: null,
     screen: "travel" as const,
-    log: pushLog(state.log, "The crew walks past the dive. Discipline. Mostly fear."),
+    log: state.detourResult
+      ? state.log
+      : pushLog(state.log, "The crew walks past the dive. Discipline. Mostly fear."),
   };
-  return next;
 }
 
 export function resolveChoice(state: GameState, choiceIndex: number): GameState {
-  if (!state.event) return state;
+  if (!state.event || state.eventResult) return state;
   const choice = state.event.choices[choiceIndex];
   if (!choice) return state;
   if (choice.cost && state.money < choice.cost) return state;
@@ -614,10 +652,12 @@ export function giveToast(state: GameState, toastIndex: number): GameState {
 }
 
 export function startPong(state: GameState): GameState {
-  return { ...state, screen: "pong", pongThrowsLeft: 3, pongHits: 0 };
+  if (state.pongUsed) return state;
+  return { ...state, screen: "pong", pongThrowsLeft: 3, pongHits: 0, pongResult: null };
 }
 
 export function throwPong(state: GameState, hit: boolean): GameState {
+  if (state.screen !== "pong" || state.pongThrowsLeft <= 0) return state;
   const hits = state.pongHits + (hit ? 1 : 0);
   const left = state.pongThrowsLeft - 1;
   const beers = state.beers + (hit ? 2 : 0);
@@ -631,6 +671,10 @@ export function throwPong(state: GameState, hit: boolean): GameState {
       pongHits: hits,
       pongThrowsLeft: 0,
       pongUsed: true,
+      pongResult:
+        hits === 0
+          ? "Beer pong: 0 for 3. The table has seen better."
+          : `Beer pong: ${hits} for 3. +${hits * 2} beers.`,
       screen: "landmark",
       log,
     };
@@ -642,7 +686,8 @@ export function buyItem(state: GameState, itemId: string): GameState {
   const item = SHOP_ITEMS.find((i) => i.id === itemId);
   if (!item || state.money < item.cost) return state;
   let next: GameState = { ...state, money: state.money - item.cost };
-  next = { ...next, log: pushLog(next.log, `Bought: ${item.name} (-$${item.cost}).`) };
+  const boughtLine = `Bought: ${item.name} (-$${item.cost}).`;
+  next = { ...next, log: pushLog(next.log, boughtLine) };
   if (item.id === "water") {
     next = soberMember(next);
     next = { ...next, dignity: Math.min(100, next.dignity + 5) };
@@ -729,9 +774,37 @@ export function buyItem(state: GameState, itemId: string): GameState {
       dignity: Math.max(0, next.dignity - 3),
     };
   }
+  next = summarizePurchase(state, next, item.name, boughtLine);
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
   return next;
+}
+
+/** Put what a purchase did on screen, so a buy never feels like a dead click. */
+function summarizePurchase(
+  before: GameState,
+  after: GameState,
+  itemName: string,
+  boughtLine: string
+): GameState {
+  const bits: string[] = [`-$${before.money - after.money}`];
+  const db = after.beers - before.beers;
+  const dd = after.dignity - before.dignity;
+  if (db) bits.push(`${db > 0 ? "+" : ""}${db} beers`);
+  if (dd) bits.push(`${dd > 0 ? "+" : ""}${dd} dignity`);
+  const at = after.log.lastIndexOf(boughtLine);
+  const extra = at >= 0 ? after.log.slice(at + 1) : [];
+  const text = [`Bought ${itemName} (${bits.join(", ")}).`, ...extra].join(" ");
+  return { ...after, landmarkResult: text };
+}
+
+/** Stock the shop once per stop, so closing and reopening it can't reroll the shelves. */
+export function openShop(state: GameState): GameState {
+  if (state.shopStock) return state;
+  const stock = shuffled(shopItemsForTurn(state.turn))
+    .slice(0, 3)
+    .map((i) => i.id);
+  return { ...state, shopStock: stock };
 }
 
 export function shopItemsForTurn(turn: number) {
@@ -741,6 +814,7 @@ export function shopItemsForTurn(turn: number) {
 /* ---------------- shot roulette ---------------- */
 
 export function startRoulette(state: GameState): GameState {
+  if (state.rouletteUsed) return state;
   return {
     ...state,
     screen: "roulette",
@@ -751,6 +825,7 @@ export function startRoulette(state: GameState): GameState {
 }
 
 export function takeRouletteShot(state: GameState, slot: number): GameState {
+  if (state.screen !== "roulette" || state.rouletteUsed) return state;
   if (state.rouletteTaken.includes(slot)) return state;
   const taken = [...state.rouletteTaken, slot];
   if (slot === state.rouletteBad) {
@@ -789,7 +864,20 @@ export function takeRouletteShot(state: GameState, slot: number): GameState {
 
 export function leaveRoulette(state: GameState): GameState {
   if (state.over) return { ...state, screen: "over" };
-  return { ...state, screen: "landmark", rouletteResult: null };
+  // Walking away spends the roulette for this stop. Otherwise a player could
+  // take one clean shot, leave, and restart the table for endless beers.
+  const walkedAway = !state.rouletteUsed;
+  return {
+    ...state,
+    screen: "landmark",
+    rouletteUsed: true,
+    rouletteResult: null,
+    landmarkResult: walkedAway
+      ? state.rouletteTaken.length > 0
+        ? `You walk away from the table with ${state.rouletteTaken.length} clean shot${state.rouletteTaken.length > 1 ? "s" : ""}. Smart.`
+        : "You wave off the shots. The bartender nods."
+      : state.rouletteResult ?? state.landmarkResult,
+  };
 }
 
 /* ---------------- achievements ---------------- */
