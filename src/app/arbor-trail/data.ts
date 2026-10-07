@@ -12,6 +12,7 @@ export interface CrewMember {
   tolerance: number;
   charm: number;
   status: MemberStatus;
+  personalityId: string;
 }
 
 export interface DrinkingClass {
@@ -282,6 +283,102 @@ export const TOMBSTONE_CAUSES = [
   "their own confidence",
   "the jukebox",
   "a competing toast",
+];
+
+/* ---------------- crew personalities ----------------
+   Banter lines support {other}, {leader}, {beers}, {clock}. */
+
+export interface Personality {
+  id: string;
+  name: string;
+  lines: string[];
+}
+
+export const PERSONALITIES: Personality[] = [
+  {
+    id: "hype",
+    name: "Hype Man",
+    lines: [
+      "LETS GOOO! {other}, you are walking like a champion right now.",
+      "Best night of our lives and it is only {clock}. Think about that.",
+      "I have never been more alive. {leader}, keep leading!",
+      "Fifty beers? That is just the warmup.",
+      "Look at this crew. LOOK AT US.",
+      "{other} just power-walked past a pretzel cart without stopping. Legend behavior.",
+      "My blood is forty percent foam right now.",
+      "If we do not make it to midnight, we die as heroes!",
+    ],
+  },
+  {
+    id: "skeptic",
+    name: "The Skeptic",
+    lines: [
+      "There is no way we hit fifty. I am just saying.",
+      "{other}, you said the exact same thing in 2024.",
+      "This pace is unsustainable and everyone knows it.",
+      "I am not drunk, I am just disappointed in our strategy.",
+      "Fifty beers was {leader}'s idea. Remember that at midnight.",
+      "The math is not mathing.",
+      "I will believe the 2027 venue exists when I see it.",
+      "Nobody's dignity survives Clark Street. Nobody.",
+    ],
+  },
+  {
+    id: "philosopher",
+    name: "The Philosopher",
+    lines: [
+      "You ever think about how trees just stand there? All day? {other}, back me up here.",
+      "Arbor Day is really about the friends we hydrated along the way.",
+      "Beer is just bread that believed in itself.",
+      "What if the trail is the friends? No wait. The trail is definitely the bars.",
+      "Every beer is a small funeral for sobriety.",
+      "The stars are out. Or those are streetlights. Either way: beautiful.",
+      "{leader}, do you think the trees know we party for them?",
+      "Time is a flat circle. So is this pretzel I am eating.",
+    ],
+  },
+  {
+    id: "mom",
+    name: "Mom Friend",
+    lines: [
+      "Did everyone drink water? {other}, I am looking at you.",
+      "I brought extra pretzels. Take one. TAKE ONE.",
+      "Text me when you get to the next bar. Actually I will just watch you walk.",
+      "{leader}, slow down. You are going to trip on literally nothing.",
+      "Has anyone seen my dignity? I had it at Kincade's.",
+      "Eat something. The burrito guy is right there.",
+      "I am not mad, I am just disappointed we are only at {beers} beers.",
+      "Shoes tied? Laces kill more nights than shots do.",
+    ],
+  },
+  {
+    id: "wildcard",
+    name: "The Wildcard",
+    lines: [
+      "I just high-fived a parking meter. It deserved it.",
+      "What if we run the rest of the way? I am serious. {other}, race me.",
+      "I know a guy who knows a guy who tends bar at the 2027 venue.",
+      "Bet you I cannot chug this. Bet you I CAN.",
+      "The moon is doing something weird tonight. Do not look directly at it.",
+      "I just Venmo-requested a pigeon four dollars.",
+      "{leader}, give me your shoes. Trust me.",
+      "New rule: every third step is a little dance.",
+    ],
+  },
+  {
+    id: "nostalgist",
+    name: "The Nostalgist",
+    lines: [
+      "Back at Arbor Day '23, Kincade's had this exact smell.",
+      "You rookies do not know how good you have it. We used to walk UPHILL to Sluggers.",
+      "'24 at Sluggers. Now THAT was a back bar.",
+      "Easy Bar '25. I still think about that night.",
+      "The Field House buyout last year? Peak civilization.",
+      "{other}, you were not even there in '23. You do not know.",
+      "They do not make bar nights like they used to. Except this one. This one is good.",
+      "Six years of this. Six. {leader}, we are basically historians.",
+    ],
+  },
 ];
 
 export const DEFAULT_NAMES = ["Quinn", "Jason", "Boudos", "Rando", "Plus-One"];

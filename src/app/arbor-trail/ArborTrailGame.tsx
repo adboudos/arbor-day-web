@@ -20,6 +20,7 @@ import {
   GameState,
   getClass,
   getPace,
+  getPersonality,
   getRation,
   giveToast,
   HighScore,
@@ -125,6 +126,7 @@ function CrewList({ state }: { state: GameState }) {
           <span className={m.status === "gone" ? "line-through opacity-50" : ""}>
             {i === 0 ? "> " : ""}
             {m.name}
+            <span className="trail-dim text-xs"> ({getPersonality(m.personalityId).name.toLowerCase()})</span>
           </span>
           <span className={`trail-status ${STATUS_STYLE[m.status]}`}>{m.status}</span>
         </li>
@@ -350,6 +352,15 @@ function TravelScreen({
     <div className="space-y-4">
       <TrailCanvas turn={state.turn} crew={state.crew} />
       <StatusPanel state={state} />
+      {state.banter && (
+        <div className="trail-panel p-4" aria-live="polite">
+          <p className="m-0 font-mono text-sm leading-relaxed">
+            <span className="trail-dim">&ldquo;</span>
+            {state.banter}
+            <span className="trail-dim">&rdquo;</span>
+          </p>
+        </div>
+      )}
       <GameLog lines={state.log} />
       <TrailButton
         primary
