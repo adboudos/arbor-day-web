@@ -252,6 +252,24 @@ export const SHOP_ITEMS: ShopItem[] = [
     desc: "+15 dignity. A medical marvel.",
     minTurn: 7,
   },
+  {
+    id: "beef",
+    name: "Italian beef, dipped",
+    cost: 8,
+    desc: "One member sobers up a level. +10 dignity. Hot peppers on the side.",
+  },
+  {
+    id: "malort",
+    name: "Malort, hair of the dog",
+    cost: 4,
+    desc: "+3 beers. One random member gets drunker. You know the risks.",
+  },
+  {
+    id: "garrett",
+    name: "Garrett Mix",
+    cost: 5,
+    desc: "+8 dignity. Cheese and caramel, the Chicago handshake.",
+  },
 ];
 
 export const TOASTS: ToastOption[] = [
@@ -270,6 +288,16 @@ export const TOASTS: ToastOption[] = [
     success: "A moment of genuine emotion. +8 dignity, +1 beer.",
     fail: "You forgot a venue name. The crew will never let it go. -5 dignity.",
   },
+  {
+    text: "To Malort: it tastes like a tire fire, and we drink it anyway.",
+    success: "The bar nods in solemn respect. +8 dignity.",
+    fail: "Someone gags mid-toast. The moment is ruined. -5 dignity.",
+  },
+  {
+    text: "To the '85 Bears: the greatest team that ever lived. No debate.",
+    success: "The Superfans weep. +10 dignity, +2 beers.",
+    fail: "A Packers fan objects. There is always one. -5 dignity.",
+  },
 ];
 
 export const TOMBSTONE_CAUSES = [
@@ -283,13 +311,16 @@ export const TOMBSTONE_CAUSES = [
   "their own confidence",
   "the jukebox",
   "a competing toast",
+  "Malort",
+  "the Red Line at 2 AM",
+  "deep dish hubris",
 ];
 
 /* ---------------- dive bar detours ----------------
    Real Chicago dives, each with its own game or fate. */
 
-export type MinigameKind = "darts" | "batting" | "pool" | "chug";
-export type DetourKind = MinigameKind | "good" | "bad" | "rooftop" | "gamble" | "lost";
+export type MinigameKind = "darts" | "batting" | "pool" | "chug" | "trumpet";
+export type DetourKind = MinigameKind | "good" | "bad" | "rooftop" | "gamble" | "lost" | "roast";
 
 export interface DiveBar {
   name: string;
@@ -397,6 +428,31 @@ export const DIVE_BARS: DiveBar[] = [
     cta: "CHUG DABS",
     result: "",
   },
+  {
+    name: "Green Mill",
+    blurb: "Uptown jazz legend. Al Capone's booth is right there. The trumpet solo is starting.",
+    kind: "trumpet",
+    cta: "HOLD STEADY",
+    result: "",
+  },
+  {
+    name: "Wieners Circle",
+    blurb: "Late night. The staff is already yelling. At everyone. Especially you.",
+    kind: "roast",
+    cta: "STEP UP",
+    result: "",
+  },
+  {
+    name: "Cubby Bear",
+    blurb: "Wrigleyville prices. The beer is $8. The bar is... a bar.",
+    kind: "bad",
+    cta: "PAY UP",
+    cost: 8,
+    beers: 2,
+    dignity: -5,
+    result:
+      "Eight dollar beers in a bad bar. Wrigleyville, baby. -$8, +2 beers, -5 dignity.",
+  },
 ];
 
 /* ---------------- crew personalities ----------------
@@ -421,6 +477,8 @@ export const PERSONALITIES: Personality[] = [
       "{other} just power-walked past a pretzel cart without stopping. Legend behavior.",
       "My blood is forty percent foam right now.",
       "If we do not make it to midnight, we die as heroes!",
+      "Malort round! Who is in? {other}, do not look at me like that.",
+      "Deep dish is a casserole and I will die on this hill.",
     ],
   },
   {
@@ -435,6 +493,8 @@ export const PERSONALITIES: Personality[] = [
       "The math is not mathing.",
       "I will believe the 2027 venue exists when I see it.",
       "Nobody's dignity survives Clark Street. Nobody.",
+      "The Red Line is delayed. The Red Line is always delayed. Plan accordingly.",
+      "Tavern-style is the only pizza. I have the data. I do not have the data.",
     ],
   },
   {
@@ -449,6 +509,8 @@ export const PERSONALITIES: Personality[] = [
       "The stars are out. Or those are streetlights. Either way: beautiful.",
       "{leader}, do you think the trees know we party for them?",
       "Time is a flat circle. So is this pretzel I am eating.",
+      "The Bean is just a mirror that makes everyone look like a tourist. Profound.",
+      "What if Malort is a test and we are all failing it? {other}, discuss.",
     ],
   },
   {
@@ -463,6 +525,8 @@ export const PERSONALITIES: Personality[] = [
       "Eat something. The burrito guy is right there.",
       "I am not mad, I am just disappointed we are only at {beers} beers.",
       "Shoes tied? Laces kill more nights than shots do.",
+      "Everyone eat something. Portillo's is right there. I am not asking twice.",
+      "If anyone orders Malort, I am calling your mothers. All of them.",
     ],
   },
   {
@@ -477,6 +541,8 @@ export const PERSONALITIES: Personality[] = [
       "I just Venmo-requested a pigeon four dollars.",
       "{leader}, give me your shoes. Trust me.",
       "New rule: every third step is a little dance.",
+      "I just licked the Bean. Worth it. Do not tell security.",
+      "Bet I can name every L stop. Watch me. {other}, time me.",
     ],
   },
   {
@@ -491,6 +557,8 @@ export const PERSONALITIES: Personality[] = [
       "{other}, you were not even there in '23. You do not know.",
       "They do not make bar nights like they used to. Except this one. This one is good.",
       "Six years of this. Six. {leader}, we are basically historians.",
+      "The Green Mill has not changed since Capone. Respect.",
+      "Remember when Old Style was $2? {other}, you are too young to remember.",
     ],
   },
 ];
@@ -1799,6 +1867,248 @@ export const EVENTS: TrailEvent[] = [
         result: {
           text: "A nod says everything. The pact holds.",
           dignity: 4,
+        },
+      },
+    ],
+  },
+  {
+    id: "malort-round",
+    text: "Someone orders a round of Malort for the table. The bar goes quiet.",
+    choices: [
+      {
+        label: "Drink it",
+        sub: "No hesitation",
+        result: {
+          text: "You do not flinch. The bar erupts. You are a legend now.",
+          dignity: 10,
+          chance: 0.5,
+          alt: {
+            text: "Your face does the thing. Everyone's face does the thing. The photo will haunt you.",
+            dignity: -10,
+            riskDrunk: 1,
+          },
+        },
+      },
+      {
+        label: "Fake it",
+        sub: "Sleight of hand",
+        result: {
+          text: "You palm it into a plant. Nobody saw. The plant died, but nobody saw.",
+          dignity: 3,
+          chance: 0.7,
+          alt: {
+            text: "Caught. The whole bar saw. The shame is eternal.",
+            dignity: -8,
+          },
+        },
+      },
+      {
+        label: "Refuse",
+        sub: "Cowardice",
+        result: {
+          text: "You pass. The crew understands. The crew does not forgive.",
+          dignity: -2,
+        },
+      },
+    ],
+  },
+  {
+    id: "pizza-debate",
+    text: "A violent argument erupts: tavern-style versus deep dish.",
+    choices: [
+      {
+        label: "Tavern-style",
+        sub: "Thin, crispy, cut in squares",
+        result: {
+          text: "Correct. The crew nods. This was never a debate.",
+          dignity: 6,
+        },
+      },
+      {
+        label: "Deep dish",
+        sub: "Defend the tourists",
+        result: {
+          text: "You die on this hill. It is a casserole hill. The crew is disappointed.",
+          dignity: -6,
+          chance: 0.5,
+          alt: {
+            text: "Against all odds, you convert one skeptic. A hollow victory.",
+            dignity: 2,
+          },
+        },
+      },
+      {
+        label: "Italian beef settles this",
+        sub: "Peacemaker",
+        result: {
+          text: "Everyone stops arguing. Everyone wants beef now. Diplomacy through sandwiches.",
+          beers: 2,
+          dignity: 4,
+        },
+      },
+    ],
+  },
+  {
+    id: "red-line",
+    text: "The crew squeezes onto the Red Line. It is lively in here.",
+    choices: [
+      {
+        label: "Stay alert",
+        sub: "Heads on a swivel",
+        result: {
+          text: "You make it three stops with all belongings and most of your dignity.",
+          dignity: 3,
+        },
+      },
+      {
+        label: "Take a nap",
+        sub: "Just for a minute",
+        result: {
+          text: "You wake up at Belmont. Your wallet is $5 lighter. The city provides.",
+          money: -5,
+          dignity: -4,
+        },
+      },
+      {
+        label: "Entertain the car",
+        sub: "Karaoke, but moving",
+        result: {
+          text: "The whole car sings along. For one stop, everything is beautiful.",
+          dignity: 8,
+          chance: 0.6,
+          alt: {
+            text: "Security escorts the performance off at the next stop.",
+            dignity: -8,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "bean-selfie",
+    text: "Cloud Gate gleams under the lights. The Bean demands a photo.",
+    minTurn: 2,
+    choices: [
+      {
+        label: "Tourist photo",
+        sub: "Wholesome",
+        result: {
+          text: "Arms wide, grins wider. A genuinely good photo. Send it to the group chat.",
+          dignity: 5,
+        },
+      },
+      {
+        label: "Lick the Bean",
+        sub: "Forbidden",
+        result: {
+          text: "Security materializes instantly. You run. The taste haunts you.",
+          dignity: -15,
+          riskDrunk: 1,
+        },
+      },
+      {
+        label: "Keep walking",
+        sub: "Above it all",
+        result: {
+          text: "You have seen the Bean. The Bean has seen you. You move on.",
+          dignity: 2,
+        },
+      },
+    ],
+  },
+  {
+    id: "the-hawk",
+    text: "The Hawk hits. Wind off the lake, straight through your jacket.",
+    minTurn: 3,
+    choices: [
+      {
+        label: "Lean in",
+        sub: "Chicago tough",
+        result: {
+          text: "You walk straight into it. The city respects this.",
+          dignity: 6,
+        },
+      },
+      {
+        label: "Chase your hat",
+        sub: "It is gone",
+        result: {
+          text: "Three blocks later, hat recovered, soul diminished.",
+          dignity: -5,
+        },
+      },
+      {
+        label: "Duck into the nearest bar",
+        sub: "Tactical retreat",
+        result: {
+          text: "Warmth. Whiskey. Wisdom. The Hawk can wait.",
+          beers: 2,
+          money: -5,
+        },
+      },
+    ],
+  },
+  {
+    id: "portillos-run",
+    text: "Portillo's glows on the corner like a beacon. The crew is weakening.",
+    minTurn: 4,
+    choices: [
+      {
+        label: "Chocolate cake shake",
+        sub: "The legend",
+        result: {
+          text: "Thick enough to stand a spoon in. You feel whole again.",
+          dignity: 8,
+          money: -6,
+        },
+      },
+      {
+        label: "Cheese fries",
+        sub: "The classic",
+        result: {
+          text: "Molten, glorious, gone in ninety seconds.",
+          dignity: 5,
+          money: -5,
+        },
+      },
+      {
+        label: "Skip it",
+        sub: "Discipline",
+        result: {
+          text: "The crew watches the sign fade behind you. They will remember this betrayal.",
+          dignity: -4,
+        },
+      },
+    ],
+  },
+  {
+    id: "old-style-only",
+    text: "This bar serves exactly one beer: Old Style tallboys.",
+    choices: [
+      {
+        label: "Embrace it",
+        sub: "Chicago's beer",
+        result: {
+          text: "Crisp, cheap, perfect. You order a second before finishing the first.",
+          beers: 3,
+          dignity: 4,
+        },
+      },
+      {
+        label: "Complain",
+        sub: "Craft or death",
+        result: {
+          text: "The bartender stares. The regulars stare. You drink the Old Style.",
+          dignity: -5,
+          beers: 1,
+        },
+      },
+      {
+        label: "Leave",
+        sub: "Standards",
+        result: {
+          text: "You walk out thirsty and principled. Mostly thirsty.",
+          dignity: -2,
         },
       },
     ],
