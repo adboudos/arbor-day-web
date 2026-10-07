@@ -76,6 +76,7 @@ export interface GameState {
   detour: DiveBar | null;
   detourResult: string | null;
   minigame: MinigameKind | null;
+  walkerShield: { name: string; turns: number } | null;
 }
 
 export interface SetupInput {
@@ -173,6 +174,7 @@ export function createGame(input: SetupInput): GameState {
     detour: null,
     detourResult: null,
     minigame: null,
+    walkerShield: null,
   };
 }
 
@@ -184,6 +186,17 @@ function wobbleMember(state: GameState, member: CrewMember): GameState {
   const order: MemberStatus[] = ["sober", "tipsy", "drunk", "gone"];
   const idx = order.indexOf(member.status);
   if (idx >= order.length - 1) return state;
+  // Designated walker oath holds.
+  if (
+    state.walkerShield &&
+    state.walkerShield.turns > 0 &&
+    state.walkerShield.name === member.name
+  ) {
+    return {
+      ...state,
+      log: pushLog(state.log, `${member.name}'s walker oath holds. Steady.`),
+    };
+  }
   const roll = rand(10) + 1;
   if (roll <= member.tolerance) return state;
   const next = order[idx + 1];
@@ -330,6 +343,10 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     rouletteResult: null,
     detour: null,
     detourResult: null,
+    walkerShield:
+      state.walkerShield && state.walkerShield.turns > 1
+        ? { ...state.walkerShield, turns: state.walkerShield.turns - 1 }
+        : null,
   };
 
   if (rest) {
@@ -646,6 +663,71 @@ export function buyItem(state: GameState, itemId: string): GameState {
     if (m) next = wobbleMember(next, m);
   } else if (item.id === "garrett") {
     next = { ...next, dignity: Math.min(100, next.dignity + 8) };
+  } else if (item.id === "handshake") {
+    next = {
+      ...next,
+      beers: next.beers + 4,
+      dignity: Math.max(0, next.dignity - 3),
+    };
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+  } else if (item.id === "walker") {
+    const m = randomStanding(next);
+    if (m) {
+      next = {
+        ...next,
+        walkerShield: { name: m.name, turns: 3 },
+        log: pushLog(next.log, `${m.name} takes the walker oath. 3 turns of steady.`),
+      };
+    }
+  } else if (item.id === "tamale") {
+    next = {
+      ...next,
+      beers: next.beers + 1,
+      dignity: Math.min(100, next.dignity + 5),
+    };
+  } else if (item.id === "oldstyle") {
+    next = { ...next, beers: next.beers + 5 };
+  } else if (item.id === "mints") {
+    next = { ...next, dignity: Math.min(100, next.dignity + 4) };
+  } else if (item.id === "elburrito") {
+    next = { ...next, dignity: Math.min(100, next.dignity + 12) };
+  } else if (item.id === "rickshaw") {
+    next = { ...next, dignity: Math.max(0, next.dignity - 8) };
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+    next = {
+      ...next,
+      log: pushLog(next.log, "The rickshaw hits a pothole. Bad omen."),
+    };
+  } else if (item.id === "fire") {
+    next = {
+      ...next,
+      beers: next.beers + 2,
+      dignity: Math.min(100, next.dignity + 6),
+    };
+  } else if (item.id === "tacobell") {
+    if (Math.random() < 0.7) {
+      next = {
+        ...next,
+        dignity: Math.min(100, next.dignity + 8),
+        log: pushLog(next.log, "Fourthmeal saves the night."),
+      };
+    } else {
+      next = { ...next, dignity: Math.max(0, next.dignity - 5) };
+      const m = randomStanding(next);
+      if (m) next = wobbleMember(next, m);
+      next = {
+        ...next,
+        log: pushLog(next.log, "It hits different at midnight."),
+      };
+    }
+  } else if (item.id === "dominos") {
+    next = {
+      ...next,
+      beers: next.beers + 3,
+      dignity: Math.max(0, next.dignity - 3),
+    };
   }
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
