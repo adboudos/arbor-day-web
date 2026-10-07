@@ -7,6 +7,10 @@ import {
   ClassId,
   CrewMember,
   DEFAULT_NAMES,
+  DETOUR_BEERS,
+  DETOUR_COST,
+  DIVE_BARS,
+  DiveBar,
   EVENTS,
   GOAL_BEERS,
   LANDMARKS,
@@ -28,6 +32,7 @@ export type Screen =
   | "setup"
   | "travel"
   | "event"
+  | "detour"
   | "landmark"
   | "shop"
   | "pong"
@@ -69,6 +74,8 @@ export interface GameState {
   tombstones: Tombstone[];
   score: number;
   banter: string | null;
+  detour: DiveBar | null;
+  detourResult: string | null;
 }
 
 export interface SetupInput {
@@ -163,6 +170,8 @@ export function createGame(input: SetupInput): GameState {
     tombstones: [],
     score: 0,
     banter: null,
+    detour: null,
+    detourResult: null,
   };
 }
 
@@ -318,6 +327,8 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     toastUsed: false,
     rouletteUsed: false,
     rouletteResult: null,
+    detour: null,
+    detourResult: null,
   };
 
   if (rest) {
@@ -393,7 +404,68 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
     };
   }
 
+  // A dive bar detour precludes a regular event: one drama per turn.
+  if (Math.random() < 0.22) {
+    return {
+      ...next,
+      screen: "detour",
+      detour: pick(DIVE_BARS),
+      detourResult: null,
+      log: pushLog(next.log, "A dive bar glows down a side street. The crew slows..."),
+    };
+  }
+
   return rollEvent(next);
+}
+
+/* ---------------- dive bar detours ---------------- */
+
+export function takeDetour(state: GameState): GameState {
+  if (!state.detour || state.money < DETOUR_COST) return state;
+  let next: GameState = {
+    ...state,
+    money: state.money - DETOUR_COST,
+    beers: state.beers + DETOUR_BEERS,
+    dignity: Math.max(0, state.dignity - 8),
+  };
+  next = {
+    ...next,
+    log: pushLog(
+      next.log,
+      `Detour: ${state.detour.name}. -$${DETOUR_COST}, +${DETOUR_BEERS} beers, -8 dignity.`
+    ),
+  };
+  for (let i = 0; i < 2; i++) {
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+  }
+  let result = `The dive delivers. +${DETOUR_BEERS} beers, but the room is spinning.`;
+  if (Math.random() < 0.3) {
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+    next = {
+      ...next,
+      dignity: Math.max(0, next.dignity - 5),
+      log: pushLog(next.log, "The dive bites back. -5 dignity."),
+    };
+    result += " The dive bites back: -5 dignity.";
+  }
+  next = { ...next, detourResult: result };
+  next = checkEnd(next);
+  if (next.over) return { ...next, screen: "over" };
+  return { ...next, screen: "detour" };
+}
+
+export function skipDetour(state: GameState): GameState {
+  if (!state.detour) return state;
+  const next = {
+    ...state,
+    detour: null,
+    detourResult: null,
+    screen: "travel" as const,
+    log: pushLog(state.log, "The crew walks past the dive. Discipline. Mostly fear."),
+  };
+  return next;
 }
 
 export function resolveChoice(state: GameState, choiceIndex: number): GameState {

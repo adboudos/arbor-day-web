@@ -5,6 +5,8 @@ import {
   ACHIEVEMENTS,
   CLASSES,
   DEFAULT_NAMES,
+  DETOUR_BEERS,
+  DETOUR_COST,
   GOAL_BEERS,
   PACES,
   RATIONS,
@@ -31,8 +33,10 @@ import {
   resolveChoice,
   saveScore,
   shopItemsForTurn,
+  skipDetour,
   startPong,
   startRoulette,
+  takeDetour,
   takeRouletteShot,
   throwPong,
   unlockAchievements,
@@ -451,6 +455,76 @@ function EventScreen({
             })}
           </div>
         )
+      )}
+    </div>
+  );
+}
+
+function DetourScreen({
+  state,
+  onTake,
+  onSkip,
+}: {
+  state: GameState;
+  onTake: () => void;
+  onSkip: () => void;
+}) {
+  const bar = state.detour;
+  if (!bar) return null;
+  const cantAfford = state.money < DETOUR_COST;
+  return (
+    <div className="space-y-4">
+      <StatusPanel state={state} />
+      <div className="trail-panel space-y-2 p-4 text-center">
+        <p className="trail-danger m-0 font-mono text-xs tracking-widest">DIVE BAR SPOTTED</p>
+        <h2 className="trail-glow m-0 font-mono text-2xl font-bold">{bar.name}</h2>
+        <p className="m-0 font-mono text-sm leading-relaxed trail-dim">{bar.blurb}</p>
+      </div>
+      {state.detourResult ? (
+        <div className="trail-panel p-4">
+          <p className="trail-glow m-0 font-mono text-sm leading-relaxed">
+            {state.detourResult}
+          </p>
+        </div>
+      ) : (
+        <div className="trail-panel space-y-1 p-4 font-mono text-sm">
+          <p className="m-0">
+            <span className="trail-dim">COVER </span>${DETOUR_COST}
+          </p>
+          <p className="m-0">
+            <span className="trail-dim">HAUL </span>+{DETOUR_BEERS} beers
+          </p>
+          <p className="m-0">
+            <span className="trail-danger">RISK </span>2 crew members wobble, -8 dignity
+          </p>
+        </div>
+      )}
+      {state.detourResult ? (
+        <TrailButton primary onClick={onSkip}>
+          <span className="font-bold">STUMBLE ONWARD</span>
+        </TrailButton>
+      ) : (
+        <div className="space-y-2">
+          <TrailButton
+            primary
+            disabled={cantAfford}
+            onClick={() => {
+              sfx.detour();
+              onTake();
+            }}
+          >
+            <span className="font-bold">TAKE THE DETOUR</span>
+            {cantAfford && (
+              <>
+                <br />
+                <span className="trail-dim text-xs">(cannot afford the cover)</span>
+              </>
+            )}
+          </TrailButton>
+          <TrailButton onClick={onSkip}>
+            <span className="font-bold">KEEP WALKING</span>
+          </TrailButton>
+        </div>
       )}
     </div>
   );
@@ -977,6 +1051,13 @@ export default function ArborTrailGame() {
             state={state}
             onChoice={(i) => setState((s) => (s ? resolveChoice(s, i) : s))}
             onContinue={continueFromEvent}
+          />
+        )}
+        {state?.screen === "detour" && (
+          <DetourScreen
+            state={state}
+            onTake={() => setState((s) => (s ? takeDetour(s) : s))}
+            onSkip={() => setState((s) => (s ? skipDetour(s) : s))}
           />
         )}
         {state?.screen === "landmark" && (

@@ -285,6 +285,67 @@ export const TOMBSTONE_CAUSES = [
   "a competing toast",
 ];
 
+/* ---------------- dive bar detours ---------------- */
+
+export interface DiveBar {
+  name: string;
+  blurb: string;
+}
+
+export const DIVE_BARS: DiveBar[] = [
+  {
+    name: "The Rusty Anchor",
+    blurb: "The windows are painted black. The regulars are painted drunker.",
+  },
+  {
+    name: "Lucky's Last Call",
+    blurb: "Cash only. The ATM charges $4. The shots cost $3.",
+  },
+  {
+    name: "The Wet Whistle",
+    blurb: "The jukebox plays one song. Nobody remembers what it is anymore.",
+  },
+  {
+    name: "Big Ed's Basement",
+    blurb: "It is technically a basement. It is technically a bar. Both are true.",
+  },
+  {
+    name: "The Copper Mug",
+    blurb: "The mugs are copper. The floors are sticky. The pours are honest.",
+  },
+  {
+    name: "Sal's Eternal Happy Hour",
+    blurb: "Happy hour never ended here. Neither did 2019.",
+  },
+  {
+    name: "The Leaky Faucet",
+    blurb: "Drip, drip, drip. The ceiling is crying. The beer is cheap.",
+  },
+  {
+    name: "Goldie's",
+    blurb: "No one named Goldie has worked here since 1987. The name stays.",
+  },
+  {
+    name: "The Smoky Mirror",
+    blurb: "You look great in this mirror. Everyone does. That is the point.",
+  },
+  {
+    name: "Pat's Place",
+    blurb: "No apostrophe. Pat was clear about that. Do not ask about Pat.",
+  },
+  {
+    name: "The Bottomless Ashtray",
+    blurb: "Smoking indoors ended years ago. The ashtray remains, as a warning.",
+  },
+  {
+    name: "Ziggy's",
+    blurb: "Ziggy will remember your order forever. Ziggy will forget your name instantly.",
+  },
+];
+
+export const DETOUR_COST = 6;
+export const DETOUR_BEERS = 5;
+
 /* ---------------- crew personalities ----------------
    Banter lines support {other}, {leader}, {beers}, {clock}. */
 
