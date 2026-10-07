@@ -303,7 +303,7 @@ export function advanceTurn(state: GameState, rest: boolean): GameState {
       ...next,
       beers: next.beers + pace.beersPerTurn + ration.beerMod,
       money: Math.max(0, next.money - ration.costPerTurn),
-      dignity: Math.max(0, next.dignity - drain + ration.dignityMod),
+      dignity: Math.max(0, Math.min(100, next.dignity - drain + ration.dignityMod)),
       pretzelTurns: Math.max(0, next.pretzelTurns - 1),
       log: pushLog(
         next.log,
