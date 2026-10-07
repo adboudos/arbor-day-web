@@ -103,12 +103,23 @@ export async function fetchEditions(): Promise<Edition[]> {
 
 /* ---------------- shared REST helpers (client) ---------------- */
 
+/**
+ * Both headers are needed. The database API accepts `apikey` alone, but the
+ * Storage API rejects any request without `Authorization`.
+ */
+function authHeaders(): Record<string, string> {
+  return {
+    apikey: SUPABASE_ANON_KEY as string,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  };
+}
+
 async function sb(path: string, init?: RequestInit): Promise<Response> {
   checkEnv();
   const res = await fetch(`${SUPABASE_URL}${path}`, {
     ...init,
     headers: {
-      apikey: SUPABASE_ANON_KEY as string,
+      ...authHeaders(),
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
@@ -226,21 +237,25 @@ export async function fetchPhotoWall(): Promise<PhotoWallRow[]> {
   return (await res.json()) as PhotoWallRow[];
 }
 
-/** Upload an image file to the photo-wall bucket. Returns the storage path. */
-export async function uploadPhotoWallFile(file: File): Promise<string> {
+/** Upload a prepared image to the photo-wall bucket. Returns the storage path. */
+export async function uploadPhotoWallFile(photo: {
+  blob: Blob;
+  contentType: string;
+  ext: string;
+}): Promise<string> {
   checkEnv();
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `${crypto.randomUUID()}.${ext}`;
+  const path = `${crypto.randomUUID()}.${photo.ext}`;
   const res = await fetch(
     `${SUPABASE_URL}/storage/v1/object/photo-wall/${path}`,
     {
       method: "POST",
       headers: {
-        apikey: SUPABASE_ANON_KEY as string,
-        "Content-Type": file.type || "image/jpeg",
+        ...authHeaders(),
+        "Content-Type": photo.contentType,
+        "Cache-Control": "max-age=31536000",
         "x-upsert": "false",
       },
-      body: file,
+      body: photo.blob,
     },
   );
   if (!res.ok) {

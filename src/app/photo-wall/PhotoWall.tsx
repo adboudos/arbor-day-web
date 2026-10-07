@@ -21,8 +21,7 @@ import {
   type Edition,
   type PhotoWallRow,
 } from "@/lib/supabase";
-
-const MAX_FILE_MB = 10;
+import { PhotoProblem, preparePhoto } from "@/lib/photoUpload";
 
 type Status = "idle" | "uploading" | "done";
 
@@ -39,16 +38,13 @@ export default function PhotoWall() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchPhotoWall(), fetchEditions()])
-      .then(([wall, eds]) => {
-        if (cancelled) return;
-        setPhotos(wall);
-        setEditions(eds);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
+    // Settle both so one failing request doesn't blank out the other.
+    Promise.allSettled([fetchPhotoWall(), fetchEditions()]).then(([wall, eds]) => {
+      if (cancelled) return;
+      if (wall.status === "fulfilled") setPhotos(wall.value);
+      if (eds.status === "fulfilled") setEditions(eds.value);
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
@@ -60,6 +56,12 @@ export default function PhotoWall() {
     return map;
   }, [editions]);
 
+  // Only parties that have already happened can have photos.
+  const pastEditions = useMemo(() => {
+    const thisYear = new Date().getFullYear();
+    return editions.filter((ed) => ed.year <= thisYear);
+  }, [editions]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -68,22 +70,18 @@ export default function PhotoWall() {
       setError("Pick a photo first.");
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      setError("That file is not an image. The wall only hangs photos.");
-      return;
-    }
-    if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setError(`Keep it under ${MAX_FILE_MB}MB.`);
-      return;
-    }
     const cleanName = name.trim();
     if (!cleanName) {
       setError("Tell us who you are so we know who to thank.");
       return;
     }
     setStatus("uploading");
+    let stage: "prepare" | "upload" | "save" = "prepare";
     try {
-      const storagePath = await uploadPhotoWallFile(file);
+      const photo = await preparePhoto(file);
+      stage = "upload";
+      const storagePath = await uploadPhotoWallFile(photo);
+      stage = "save";
       const editionId = year === "" ? null : (editionIdForYear.get(year) ?? null);
       await createPhotoWallEntry({
         edition_id: editionId,
@@ -92,15 +90,19 @@ export default function PhotoWall() {
         uploader_name: cleanName.slice(0, 60),
       });
       // Auto-approved: refresh the wall so the new photo shows right away.
-      const wall = await fetchPhotoWall();
-      setPhotos(wall);
+      // The photo is already saved at this point, so a failed refresh is not an error.
+      fetchPhotoWall().then(setPhotos).catch(() => {});
       setStatus("done");
       setName("");
       setCaption("");
       setYear("");
       if (fileRef.current) fileRef.current.value = "";
-    } catch {
-      setError("The upload failed. Check your connection and try again.");
+    } catch (err) {
+      console.error("Photo wall upload failed:", err);
+      if (err instanceof PhotoProblem) setError(err.message);
+      else if (stage === "save")
+        setError("Your photo uploaded, but we couldn't hang it on the wall. Try again in a minute.");
+      else setError("The upload failed. Check your connection and try again.");
       setStatus("idle");
     }
   }
@@ -129,7 +131,7 @@ export default function PhotoWall() {
               className={inputClass}
             >
               <option value="">Not sure / other</option>
-              {editions.map((ed) => (
+              {pastEditions.map((ed) => (
                 <option key={ed.year} value={ed.year}>
                   {ed.year} at {ed.venue}
                 </option>
