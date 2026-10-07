@@ -31,6 +31,7 @@ import {
   MinigameResult,
   resolveChoice,
   resolveMinigame,
+  resolveRoast,
   saveScore,
   shopItemsForTurn,
   skipDetour,
@@ -463,15 +464,18 @@ function EventScreen({
 function DetourScreen({
   state,
   onTake,
+  onRoast,
   onSkip,
 }: {
   state: GameState;
   onTake: () => void;
+  onRoast: (i: number) => void;
   onSkip: () => void;
 }) {
   const bar = state.detour;
   if (!bar) return null;
   const cantAfford = (bar.cost ?? 0) > state.money;
+  const isRoast = bar.kind === "roast";
   return (
     <div className="space-y-4">
       <StatusPanel state={state} />
@@ -491,6 +495,35 @@ function DetourScreen({
         <TrailButton primary onClick={onSkip}>
           <span className="font-bold">STUMBLE ONWARD</span>
         </TrailButton>
+      ) : isRoast ? (
+        <div className="space-y-2">
+          <p className="m-0 font-mono text-sm trail-dim">
+            The staffer sizes you up: &quot;What do YOU want?&quot;
+          </p>
+          <TrailButton onClick={() => onRoast(0)}>
+            <span className="font-bold">Clap back</span>
+            <br />
+            <span className="trail-dim text-xs">60% glory, 40% disaster.</span>
+          </TrailButton>
+          <TrailButton onClick={() => onRoast(1)}>
+            <span className="font-bold">Take it</span>
+            <br />
+            <span className="trail-dim text-xs">-3 dignity, +2 beers.</span>
+          </TrailButton>
+          <TrailButton
+            disabled={state.money < 6}
+            onClick={() => onRoast(2)}
+          >
+            <span className="font-bold">Order and run</span>
+            <br />
+            <span className="trail-dim text-xs">
+              -$6, +2 beers.{state.money < 6 ? " (cannot afford)" : ""}
+            </span>
+          </TrailButton>
+          <TrailButton onClick={onSkip}>
+            <span className="font-bold">KEEP WALKING</span>
+          </TrailButton>
+        </div>
       ) : (
         <div className="space-y-2">
           <TrailButton
@@ -747,6 +780,26 @@ function MinigameScreen({
       />
     );
   }
+  if (kind === "trumpet") {
+    return (
+      <TimingGame
+        title={`${barName}: TRUMPET SOLO`}
+        hint="The solo is peaking. Do not spill. Do not breathe."
+        throws={3}
+        zoneForThrow={() => [46, 54]}
+        bullseyePad={2}
+        speed={3.8}
+        onDone={(hits, bulls) =>
+          onDone({
+            beers: hits * 2 + bulls,
+            dignity: hits * 2,
+            wobbles: 0,
+            text: `Trumpet solo survived: ${hits}/3 steady${bulls > 0 ? `, ${bulls} perfect` : ""}. +${hits * 2 + bulls} beers, +${hits * 2} dignity.`,
+          })
+        }
+      />
+    );
+  }
   return null;
 }
 
@@ -755,7 +808,7 @@ function LandmarkScreen({
   onToast,
   onPong,
   onRoulette,
-  onShop,
+  onBuy,
   onRest,
   onLeave,
 }: {
@@ -763,13 +816,21 @@ function LandmarkScreen({
   onToast: (i: number) => void;
   onPong: () => void;
   onRoulette: () => void;
-  onShop: () => void;
+  onBuy: (id: string) => void;
   onRest: () => void;
   onLeave: () => void;
 }) {
   const [toasting, setToasting] = useState(false);
+  const [shopping, setShopping] = useState(false);
+  const [stock, setStock] = useState<string[]>([]);
   const lm = state.landmark;
   if (!lm) return null;
+  const openShop = () => {
+    const pool = shopItemsForTurn(state.turn);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    setStock(shuffled.slice(0, 3).map((i) => i.id));
+    setShopping(true);
+  };
   return (
     <div className="space-y-4">
       <div className="trail-panel space-y-2 p-4 text-center">
@@ -809,6 +870,40 @@ function LandmarkScreen({
             <span className="text-sm">Never mind</span>
           </TrailButton>
         </div>
+      ) : shopping ? (
+        <div className="space-y-2">
+          <p className="m-0 font-mono text-sm trail-dim">
+            Today&apos;s stock (you have ${state.money}):
+          </p>
+          {shopItemsForTurn(state.turn)
+            .filter((item) => stock.includes(item.id))
+            .map((item) => {
+              const cantAfford = state.money < item.cost;
+              return (
+                <TrailButton
+                  key={item.id}
+                  disabled={cantAfford}
+                  onClick={() => {
+                    sfx.coin();
+                    onBuy(item.id);
+                    setShopping(false);
+                  }}
+                >
+                  <span className="font-bold">
+                    {item.name} - ${item.cost}
+                  </span>
+                  <br />
+                  <span className="trail-dim text-xs">
+                    {item.desc}
+                    {cantAfford ? " (cannot afford)" : ""}
+                  </span>
+                </TrailButton>
+              );
+            })}
+          <TrailButton onClick={() => setShopping(false)}>
+            <span className="text-sm">Never mind</span>
+          </TrailButton>
+        </div>
       ) : (
         <div className="space-y-2">
           {!state.toastUsed && (
@@ -833,10 +928,10 @@ function LandmarkScreen({
             </TrailButton>
           )}
           {lm.shop && (
-            <TrailButton onClick={onShop}>
+            <TrailButton onClick={openShop}>
               <span className="font-bold">4. Browse the shop</span>
               <br />
-              <span className="trail-dim text-xs">Supplies for the trail.</span>
+              <span className="trail-dim text-xs">Stock varies. Supplies for the trail.</span>
             </TrailButton>
           )}
           <TrailButton onClick={onRest}>
@@ -849,55 +944,6 @@ function LandmarkScreen({
           </TrailButton>
         </div>
       )}
-    </div>
-  );
-}
-
-function ShopScreen({
-  state,
-  onBuy,
-  onBack,
-}: {
-  state: GameState;
-  onBuy: (id: string) => void;
-  onBack: () => void;
-}) {
-  const items = shopItemsForTurn(state.turn);
-  return (
-    <div className="space-y-4">
-      <div className="trail-panel p-4 text-center">
-        <h2 className="trail-glow m-0 font-mono text-xl font-bold">TRAIL SHOP</h2>
-        <p className="trail-dim m-0 font-mono text-sm">
-          {state.landmark?.name} - You have ${state.money}
-        </p>
-      </div>
-      <div className="space-y-2">
-        {items.map((item) => {
-          const cantAfford = state.money < item.cost;
-          return (
-            <TrailButton
-              key={item.id}
-              onClick={() => {
-                sfx.coin();
-                onBuy(item.id);
-              }}
-              disabled={cantAfford}
-            >
-              <span className="font-bold">
-                {item.name} - ${item.cost}
-              </span>
-              <br />
-              <span className="trail-dim text-xs">
-                {item.desc}
-                {cantAfford ? " (cannot afford)" : ""}
-              </span>
-            </TrailButton>
-          );
-        })}
-      </div>
-      <TrailButton primary onClick={onBack}>
-        <span className="font-bold">BACK TO THE LANDMARK</span>
-      </TrailButton>
     </div>
   );
 }
@@ -1277,6 +1323,7 @@ export default function ArborTrailGame() {
           <DetourScreen
             state={state}
             onTake={() => setState((s) => (s ? takeDetour(s) : s))}
+            onRoast={(i) => setState((s) => (s ? resolveRoast(s, i) : s))}
             onSkip={() => setState((s) => (s ? skipDetour(s) : s))}
           />
         )}
@@ -1292,16 +1339,9 @@ export default function ArborTrailGame() {
             onToast={(i) => setState((s) => (s ? giveToast(s, i) : s))}
             onPong={() => setState((s) => (s ? startPong(s) : s))}
             onRoulette={() => setState((s) => (s ? startRoulette(s) : s))}
-            onShop={() => setState((s) => (s ? { ...s, screen: "shop" as const } : s))}
+            onBuy={(id) => setState((s) => (s ? buyItem(s, id) : s))}
             onRest={() => setState((s) => (s ? advanceTurn(s, true) : s))}
             onLeave={() => setState((s) => (s ? leaveLandmark(s) : s))}
-          />
-        )}
-        {state?.screen === "shop" && (
-          <ShopScreen
-            state={state}
-            onBuy={(id) => setState((s) => (s ? buyItem(s, id) : s))}
-            onBack={() => setState((s) => (s ? { ...s, screen: "landmark" as const } : s))}
           />
         )}
         {state?.screen === "pong" && (

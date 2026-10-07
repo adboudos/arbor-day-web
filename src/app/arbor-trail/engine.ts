@@ -34,7 +34,6 @@ export type Screen =
   | "detour"
   | "minigame"
   | "landmark"
-  | "shop"
   | "pong"
   | "roulette"
   | "over";
@@ -439,10 +438,14 @@ export function takeDetour(state: GameState): GameState {
     bar.kind === "darts" ||
     bar.kind === "batting" ||
     bar.kind === "pool" ||
-    bar.kind === "chug"
+    bar.kind === "chug" ||
+    bar.kind === "trumpet"
   ) {
     return { ...state, screen: "minigame", minigame: bar.kind };
   }
+
+  // Wieners Circle renders its own roast choices; takeDetour is not used.
+  if (bar.kind === "roast") return state;
 
   let next: GameState = { ...state };
   if (bar.cost) next = { ...next, money: next.money - bar.cost };
@@ -495,6 +498,40 @@ export function resolveMinigame(state: GameState, r: MinigameResult): GameState 
     const m = randomStanding(next);
     if (m) next = wobbleMember(next, m);
   }
+  next = checkEnd(next);
+  if (next.over) return { ...next, screen: "over" };
+  return { ...next, screen: "detour" };
+}
+
+export function resolveRoast(state: GameState, choice: number): GameState {
+  if (!state.detour || state.detour.kind !== "roast") return state;
+  let next: GameState = { ...state };
+  let result: string;
+  if (choice === 0) {
+    if (Math.random() < 0.6) {
+      next = { ...next, dignity: Math.min(100, next.dignity + 8) };
+      result = "You fire back. The line goes silent. Respect. +8 dignity.";
+    } else {
+      next = { ...next, dignity: Math.max(0, next.dignity - 8) };
+      result = "The whole restaurant laughs. At you. -8 dignity.";
+    }
+  } else if (choice === 1) {
+    next = {
+      ...next,
+      dignity: Math.max(0, next.dignity - 3),
+      beers: next.beers + 2,
+    };
+    result = "You take it. They respect the humility. Barely. -3 dignity, +2 beers.";
+  } else {
+    if (next.money < 6) return state;
+    next = { ...next, money: next.money - 6, beers: next.beers + 2 };
+    result = "You get your char dog and flee. -$6, +2 beers.";
+  }
+  next = {
+    ...next,
+    detourResult: result,
+    log: pushLog(next.log, `Wieners Circle: ${result}`),
+  };
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
   return { ...next, screen: "detour" };
@@ -600,6 +637,15 @@ export function buyItem(state: GameState, itemId: string): GameState {
     if (m) next = wobbleMember(next, m);
   } else if (item.id === "burrito") {
     next = { ...next, dignity: Math.min(100, next.dignity + 15) };
+  } else if (item.id === "beef") {
+    next = soberMember(next);
+    next = { ...next, dignity: Math.min(100, next.dignity + 10) };
+  } else if (item.id === "malort") {
+    next = { ...next, beers: next.beers + 3 };
+    const m = randomStanding(next);
+    if (m) next = wobbleMember(next, m);
+  } else if (item.id === "garrett") {
+    next = { ...next, dignity: Math.min(100, next.dignity + 8) };
   }
   next = checkEnd(next);
   if (next.over) return { ...next, screen: "over" };
