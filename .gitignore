@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# private agent context (personal lore, never commit)
+/CLAUDE.local.md
