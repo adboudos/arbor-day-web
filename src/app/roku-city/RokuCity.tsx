@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 type TimeOfDay = "day" | "dusk" | "night";
+type Speed = "slow" | "normal" | "fast";
 
 interface Spot {
   id: string;
@@ -21,7 +22,7 @@ const SPOTS: Spot[] = [
     kind: "Landmark",
     note: "The tall one with the antennas.",
     detail:
-      "Still Sears Tower to everyone who grew up here. The antennas are the tell. On a clear night you can see it from every bar on the shortlist.",
+      "Still Sears Tower to everyone who grew up here. The antennas blink at night, and on a clear night you can see it from every bar on the shortlist.",
   },
   {
     id: "hancock",
@@ -38,6 +39,22 @@ const SPOTS: Spot[] = [
     note: "The corncob towers on the river.",
     detail:
       "Two round towers that look like corncobs, parked right on the Chicago River. If you know, you know.",
+  },
+  {
+    id: "aon",
+    name: "Aon Center",
+    kind: "Landmark",
+    note: "The tall white slab downtown.",
+    detail:
+      "The third tallest tower in the city, a clean white rectangle in the middle of the Loop skyline.",
+  },
+  {
+    id: "watertower",
+    name: "Chicago Water Tower",
+    kind: "Landmark",
+    note: "The little stone castle on Michigan Avenue.",
+    detail:
+      "Built in 1869, it survived the Great Chicago Fire. The smallest landmark in the skyline, and the oldest.",
   },
   {
     id: "bean",
@@ -85,7 +102,7 @@ const SPOTS: Spot[] = [
     kind: "Landmark",
     note: "The river that runs through downtown.",
     detail:
-      "The riverwalk, the bridges, the tour boats. Watch the little boat cross the scene. It never docks, it just keeps going.",
+      "The riverwalk, the bridges, and the tour boats. Watch the little boat cross the scene. It never docks, it just keeps going.",
   },
   {
     id: "ltrain",
@@ -149,387 +166,430 @@ const SKIES: Record<TimeOfDay, string> = {
   night: "linear-gradient(to bottom, #0b1226 0%, #16244d 55%, #1d3a5f 100%)",
 };
 
-const SKY_LABEL: Record<TimeOfDay, string> = {
-  day: "Day",
-  dusk: "Dusk, party time",
-  night: "Night",
+const SPEED_SECONDS: Record<Speed, number> = {
+  slow: 180,
+  normal: 120,
+  fast: 60,
 };
+
+function Label({ x, y, children }: { x: number; y: number; children: string }) {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      fontSize="17"
+      fontWeight="800"
+      fill="#f6f0dc"
+      stroke="#0e2317"
+      strokeWidth="4"
+      paintOrder="stroke"
+    >
+      {children}
+    </text>
+  );
+}
+
+function SkylinePanel({
+  labelsOn,
+  time,
+  motion,
+  selectedId,
+  onSelect,
+}: {
+  labelsOn: boolean;
+  time: TimeOfDay;
+  motion: string;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const lit = time !== "day";
+  const groupProps = (id: string) => ({
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-label": SPOTS.find((s) => s.id === id)?.name ?? id,
+    "aria-pressed": selectedId === id,
+    onClick: () => onSelect(id),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") onSelect(id);
+      else if (e.key === " ") {
+        e.preventDefault();
+        onSelect(id);
+      }
+    },
+    className: "cursor-pointer focus-visible:outline-3 focus-visible:outline-amber",
+  });
+
+  return (
+    <svg
+      viewBox="0 0 1400 520"
+      className="h-full w-[1400px] shrink-0"
+      preserveAspectRatio="xMidYMax slice"
+      role="group"
+      aria-label="Animated Chicago skyline, Roku City style. Tap a building to learn about it."
+    >
+      <g opacity="0.55" fill="#1d3a5f">
+        <rect x="0" y="300" width="80" height="220" />
+        <rect x="100" y="260" width="70" height="260" />
+        <rect x="480" y="280" width="90" height="240" />
+        <rect x="700" y="250" width="70" height="270" />
+        <rect x="900" y="290" width="90" height="230" />
+        <rect x="1250" y="270" width="80" height="250" />
+      </g>
+
+      <g {...groupProps("watertower")}>
+        <rect x="30" y="360" width="56" height="160" fill="#8a7a5a" />
+        <polygon points="30,360 58,320 86,360" fill="#6b5d45" />
+        <rect x="26" y="330" width="10" height="50" fill="#8a7a5a" />
+        <rect x="80" y="330" width="10" height="50" fill="#8a7a5a" />
+        {labelsOn && <Label x={58} y={305}>Water Tower</Label>}
+      </g>
+
+      <g {...groupProps("aon")}>
+        <rect x="130" y="180" width="72" height="340" fill="#e8e4d8" />
+        <rect x="130" y="180" width="72" height="340" fill="#0e2317" opacity="0.25" />
+        {lit && (
+          <g fill="#f2b632">
+            <rect x="145" y="200" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} />
+            <rect x="175" y="240" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-1s" }} />
+          </g>
+        )}
+        {labelsOn && <Label x={166} y={165}>Aon Center</Label>}
+      </g>
+
+      <g {...groupProps("willis")}>
+        <rect x="245" y="60" width="14" height="70" fill="#0e2317" />
+        <rect x="268" y="40" width="14" height="90" fill="#0e2317" />
+        {lit && <circle cx="275" cy="38" r="4" fill="#ff785a" className={`motion-safe:animate-twinkle ${motion}`} />}
+        <rect x="230" y="130" width="100" height="390" fill="#0e2317" />
+        <rect x="230" y="130" width="33" height="390" fill="#14301f" />
+        <rect x="297" y="130" width="33" height="390" fill="#14301f" />
+        {lit && (
+          <g fill="#f2b632">
+            <rect x="240" y="150" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} />
+            <rect x="270" y="190" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-1s" }} />
+            <rect x="300" y="230" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-2s" }} />
+          </g>
+        )}
+        {labelsOn && <Label x={280} y={30}>Willis Tower</Label>}
+      </g>
+
+      <g {...groupProps("hancock")}>
+        <polygon points="380,520 400,150 460,150 480,520" fill="#14301f" />
+        <line x1="400" y1="150" x2="480" y2="520" stroke="#8fcf6a" strokeWidth="3" />
+        <line x1="460" y1="150" x2="380" y2="520" stroke="#8fcf6a" strokeWidth="3" />
+        <line x1="390" y1="330" x2="470" y2="330" stroke="#8fcf6a" strokeWidth="2" />
+        {labelsOn && <Label x={430} y={135}>Hancock</Label>}
+      </g>
+
+      <g {...groupProps("marina")}>
+        <rect x="520" y="220" width="56" height="300" rx="28" fill="#14301f" />
+        <rect x="588" y="240" width="56" height="280" rx="28" fill="#0e2317" />
+        {[250, 285, 320, 355, 390, 425].map((y) => (
+          <line key={y} x1="522" y1={y} x2="574" y2={y} stroke="#f6f0dc" strokeWidth="2" opacity="0.5" />
+        ))}
+        {labelsOn && <Label x={582} y={205}>Marina City</Label>}
+      </g>
+
+      <g {...groupProps("theatre")}>
+        <rect x="690" y="330" width="80" height="190" fill="#0e2317" />
+        <rect x="722" y="240" width="16" height="100" fill="#a8741a" />
+        <text x="730" y="260" fill="#f2b632" fontSize="13" fontWeight="900" textAnchor="middle" transform="rotate(90 730 260)">
+          CHICAGO
+        </text>
+        {labelsOn && <Label x={730} y={225}>Chicago Theatre</Label>}
+      </g>
+
+      <g {...groupProps("wrigley")}>
+        <rect x="800" y="380" width="110" height="140" fill="#0e2317" />
+        <rect x="815" y="350" width="80" height="34" fill="#f2b632" />
+        <text x="855" y="373" textAnchor="middle" fontSize="14" fontWeight="900" fill="#0e2317">
+          WRIGLEY
+        </text>
+        <line x1="800" y1="380" x2="790" y2="300" stroke="#f6f0dc" strokeWidth="4" />
+        <line x1="910" y1="380" x2="920" y2="300" stroke="#f6f0dc" strokeWidth="4" />
+        {lit && (
+          <>
+            <circle cx="790" cy="296" r="6" fill="#f2b632" className={`motion-safe:animate-twinkle ${motion}`} />
+            <circle cx="920" cy="296" r="6" fill="#f2b632" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-1s" }} />
+          </>
+        )}
+        {labelsOn && <Label x={855} y={285}>Wrigley Field</Label>}
+      </g>
+
+      <g {...groupProps("ferris")}>
+        <g
+          className={`motion-safe:animate-spin-slow ${motion}`}
+          style={{ transformOrigin: "1090px 380px" }}
+        >
+          <circle cx="1090" cy="380" r="72" fill="none" stroke="#f6f0dc" strokeWidth="4" />
+          <circle cx="1090" cy="380" r="8" fill="#f2b632" />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+            const rad = (a * Math.PI) / 180;
+            return (
+              <g key={a}>
+                <line
+                  x1="1090"
+                  y1="380"
+                  x2={1090 + 72 * Math.cos(rad)}
+                  y2={380 + 72 * Math.sin(rad)}
+                  stroke="#f6f0dc"
+                  strokeWidth="2"
+                />
+                <circle cx={1090 + 72 * Math.cos(rad)} cy={380 + 72 * Math.sin(rad)} r="6" fill="#f2b632" />
+              </g>
+            );
+          })}
+        </g>
+        <line x1="1055" y1="520" x2="1090" y2="450" stroke="#0e2317" strokeWidth="6" />
+        <line x1="1125" y1="520" x2="1090" y2="450" stroke="#0e2317" strokeWidth="6" />
+        {labelsOn && <Label x={1090} y={290}>Navy Pier Wheel</Label>}
+      </g>
+
+      <g {...groupProps("bean")}>
+        <ellipse cx="1250" cy="480" rx="58" ry="30" fill="#cfe3ee" stroke="#f6f0dc" strokeWidth="2" />
+        <ellipse cx="1235" cy="472" rx="18" ry="8" fill="#ffffff" opacity="0.8" />
+        {labelsOn && <Label x={1250} y={435}>The Bean</Label>}
+      </g>
+
+      <g {...groupProps("fountain")}>
+        <ellipse cx="1350" cy="495" rx="42" ry="10" fill="#7ec8e3" />
+        <path d="M1332 495 Q1350 455 1368 495" fill="none" stroke="#bfe8f2" strokeWidth="3" />
+        <path d="M1342 495 Q1350 468 1358 495" fill="none" stroke="#ffffff" strokeWidth="2" />
+        {labelsOn && <Label x={1350} y={440}>Buckingham Fountain</Label>}
+      </g>
+
+      <rect x="0" y="505" width="1400" height="15" fill="#1d4e6b" />
+    </svg>
+  );
+}
 
 export default function RokuCity() {
   const [time, setTime] = useState<TimeOfDay>("dusk");
   const [paused, setPaused] = useState(false);
-  const [selectedId, setSelectedId] = useState<string>("willis");
-  const selected = SPOTS.find((s) => s.id === selectedId) ?? SPOTS[0];
+  const [labelsOn, setLabelsOn] = useState(true);
+  const [speed, setSpeed] = useState<Speed>("normal");
+  const [showList, setShowList] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = SPOTS.find((s) => s.id === selectedId) ?? null;
   const motion = paused ? "[animation-play-state:paused]" : "";
+  const skylineSeconds = SPEED_SECONDS[speed];
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <div
-        className="relative w-full overflow-hidden rounded-2xl border border-cream/16 shadow-card"
-        style={{ background: SKIES[time] }}
-      >
-        <div className="relative flex min-h-[26rem] flex-col justify-end sm:min-h-[30rem]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
-            <div className="rounded-xl bg-forest/70 px-4 py-3 text-left backdrop-blur">
-              <p className="text-xs font-black tracking-[.25em] text-amber uppercase">
-                Roku City, Chicago
-              </p>
-              <p className="mt-0.5 text-lg leading-tight font-black text-cream">
-                Arbor Day, after dark
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPaused((p) => !p)}
-                aria-pressed={paused}
-                className="min-h-11 rounded-full bg-cream px-4 text-sm font-black text-forest"
-              >
-                {paused ? "Play motion" : "Pause motion"}
-              </button>
-              <p className="rounded-full bg-forest/70 px-3 py-1 text-xs font-bold text-cream backdrop-blur">
-                {SKY_LABEL[time]}
-              </p>
-            </div>
-          </div>
+    <main
+      className="relative flex h-[calc(100dvh-4.2rem)] min-h-[30rem] w-full flex-col overflow-hidden"
+      style={{ background: SKIES[time] }}
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <span className={`absolute top-10 left-0 h-8 w-24 rounded-full bg-white/70 blur-[2px] motion-safe:animate-drift ${motion}`} />
+        <span
+          className={`absolute top-24 left-0 h-6 w-16 rounded-full bg-white/50 blur-[2px] motion-safe:animate-drift ${motion}`}
+          style={{ animationDelay: "-30s", animationDuration: "90s" }}
+        />
+        {time !== "day" && (
+          <>
+            <span className="absolute top-8 right-8 size-10 rounded-full bg-amber shadow-[0_0_40px_10px_rgba(242,182,50,0.5)]" />
+            <span className={`absolute top-24 left-[12%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`} />
+            <span className={`absolute top-16 left-[38%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-1s" }} />
+            <span className={`absolute top-28 left-[62%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-2s" }} />
+          </>
+        )}
+        {time === "day" && (
+          <span className="absolute top-8 right-8 size-12 rounded-full bg-amber shadow-[0_0_50px_14px_rgba(242,182,50,0.6)]" />
+        )}
+        <div className={`absolute top-16 left-0 whitespace-nowrap text-base font-black tracking-[.3em] text-cream/90 motion-safe:animate-drift ${motion}`} style={{ animationDuration: "140s" }}>
+          ARBOR DAY &middot; APR 30 2027 &middot; ARBOR DAY &middot; APR 30 2027
+        </div>
+      </div>
 
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-            <span
-              className={`absolute top-8 left-0 h-8 w-24 rounded-full bg-white/70 blur-[2px] motion-safe:animate-drift ${motion}`}
-            />
-            <span
-              className={`absolute top-20 left-0 h-6 w-16 rounded-full bg-white/50 blur-[2px] motion-safe:animate-drift ${motion}`}
-              style={{ animationDelay: "-30s", animationDuration: "90s" }}
-            />
-            <span
-              className={`absolute top-14 left-0 h-5 w-20 rounded-full bg-white/40 blur-[2px] motion-safe:animate-drift ${motion}`}
-              style={{ animationDelay: "-55s", animationDuration: "80s" }}
-            />
-            {time !== "day" && (
-              <>
-                <span className="absolute top-10 right-10 size-10 rounded-full bg-amber shadow-[0_0_40px_10px_rgba(242,182,50,0.5)]" />
-                <span className={`absolute top-24 left-[12%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`} />
-                <span
-                  className={`absolute top-16 left-[38%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`}
-                  style={{ animationDelay: "-1s" }}
-                />
-                <span
-                  className={`absolute top-28 left-[62%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`}
-                  style={{ animationDelay: "-2s" }}
-                />
-                <span
-                  className={`absolute top-12 left-[82%] size-1 rounded-full bg-white motion-safe:animate-twinkle ${motion}`}
-                  style={{ animationDelay: "-0.5s" }}
-                />
-              </>
-            )}
-            {time === "day" && (
-              <span className="absolute top-8 right-8 size-12 rounded-full bg-amber shadow-[0_0_50px_14px_rgba(242,182,50,0.6)]" />
-            )}
-          </div>
-
-          <svg
-            viewBox="0 0 1200 420"
-            className="relative mt-24 w-full"
-            role="group"
-            aria-label="Animated Chicago skyline, Roku City style, with the Willis Tower, the Hancock Center, Marina City, the Bean, the Navy Pier Ferris Wheel, and the past Arbor Day venues as lit storefronts. Tap a building to learn about it."
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3">
+        <div className="rounded-xl bg-forest/70 px-3 py-2 backdrop-blur">
+          <p className="text-[11px] font-black tracking-[.25em] text-amber uppercase">Roku City, Chicago</p>
+          <p className="text-base leading-tight font-black text-cream">Arbor Day, after dark</p>
+        </div>
+        <div className="pointer-events-auto flex gap-2">
+          <button
+            type="button"
+            onClick={() => setLabelsOn((v) => !v)}
+            aria-pressed={labelsOn}
+            className="min-h-11 rounded-full bg-forest/70 px-4 text-sm font-black text-cream backdrop-blur"
           >
-            <g>
-              <rect x="40" y="220" width="70" height="200" fill="#1d3a5f" opacity="0.85" />
-              <rect x="130" y="180" width="60" height="240" fill="#24486e" opacity="0.85" />
-              <polygon points="230,420 230,150 260,120 290,150 290,420" fill="#1d3a5f" opacity="0.9" />
-              <rect x="320" y="240" width="80" height="180" fill="#24486e" opacity="0.85" />
-              <rect x="430" y="200" width="65" height="220" fill="#1d3a5f" opacity="0.85" />
-              <rect x="520" y="260" width="90" height="160" fill="#24486e" opacity="0.85" />
-              <rect x="640" y="210" width="70" height="210" fill="#1d3a5f" opacity="0.85" />
-              <rect x="730" y="170" width="60" height="250" fill="#24486e" opacity="0.85" />
-              <rect x="820" y="230" width="85" height="190" fill="#1d3a5f" opacity="0.85" />
-              <rect x="930" y="190" width="65" height="230" fill="#24486e" opacity="0.85" />
-              <rect x="1020" y="250" width="80" height="170" fill="#1d3a5f" opacity="0.85" />
-              <rect x="1120" y="210" width="60" height="210" fill="#24486e" opacity="0.85" />
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Willis Tower"
-              onClick={() => setSelectedId("willis")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("willis"); else if (e.key === " ") { e.preventDefault(); setSelectedId("willis"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <rect x="205" y="60" width="16" height="60" fill="#0e2317" />
-              <rect x="228" y="40" width="16" height="80" fill="#0e2317" />
-              <rect x="190" y="120" width="90" height="300" fill="#0e2317" />
-              <rect x="190" y="120" width="30" height="300" fill="#14301f" />
-              <rect x="250" y="120" width="30" height="300" fill="#14301f" />
-              {time !== "day" && (
-                <g fill="#f2b632">
-                  <rect x="200" y="140" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} />
-                  <rect x="230" y="170" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-1s" }} />
-                  <rect x="260" y="200" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-2s" }} />
-                  <rect x="210" y="240" width="8" height="8" className={`motion-safe:animate-twinkle ${motion}`} style={{ animationDelay: "-0.5s" }} />
-                </g>
-              )}
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="John Hancock Center"
-              onClick={() => setSelectedId("hancock")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("hancock"); else if (e.key === " ") { e.preventDefault(); setSelectedId("hancock"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <polygon points="360,420 380,140 430,140 450,420" fill="#14301f" />
-              <line x1="380" y1="140" x2="450" y2="420" stroke="#8fcf6a" strokeWidth="3" />
-              <line x1="430" y1="140" x2="360" y2="420" stroke="#8fcf6a" strokeWidth="3" />
-              <line x1="370" y1="280" x2="440" y2="280" stroke="#8fcf6a" strokeWidth="2" />
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Marina City"
-              onClick={() => setSelectedId("marina")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("marina"); else if (e.key === " ") { e.preventDefault(); setSelectedId("marina"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <rect x="560" y="180" width="52" height="240" rx="26" fill="#14301f" />
-              <rect x="624" y="200" width="52" height="220" rx="26" fill="#0e2317" />
-              {[200, 230, 260, 290, 320, 350].map((y) => (
-                <line key={y} x1="562" y1={y} x2="610" y2={y} stroke="#f6f0dc" strokeWidth="2" opacity="0.5" />
-              ))}
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Chicago Theatre"
-              onClick={() => setSelectedId("theatre")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("theatre"); else if (e.key === " ") { e.preventDefault(); setSelectedId("theatre"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <rect x="700" y="260" width="70" height="160" fill="#0e2317" />
-              <rect x="728" y="180" width="14" height="90" fill="#a8741a" />
-              <text x="735" y="200" fill="#f2b632" fontSize="13" fontWeight="900" textAnchor="middle" transform="rotate(90 735 200)">
-                CHICAGO
-              </text>
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Navy Pier Ferris Wheel"
-              onClick={() => setSelectedId("ferris")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("ferris"); else if (e.key === " ") { e.preventDefault(); setSelectedId("ferris"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <g
-                className={`motion-safe:animate-spin-slow ${motion}`}
-                style={{ transformOrigin: "1010px 300px" }}
-              >
-                <circle cx="1010" cy="300" r="70" fill="none" stroke="#f6f0dc" strokeWidth="4" />
-                <circle cx="1010" cy="300" r="8" fill="#f2b632" />
-                {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
-                  const rad = (a * Math.PI) / 180;
-                  return (
-                    <line
-                      key={a}
-                      x1="1010"
-                      y1="300"
-                      x2={1010 + 70 * Math.cos(rad)}
-                      y2={300 + 70 * Math.sin(rad)}
-                      stroke="#f6f0dc"
-                      strokeWidth="2"
-                    />
-                  );
-                })}
-                {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
-                  const rad = (a * Math.PI) / 180;
-                  return (
-                    <circle
-                      key={a}
-                      cx={1010 + 70 * Math.cos(rad)}
-                      cy={300 + 70 * Math.sin(rad)}
-                      r="6"
-                      fill="#f2b632"
-                    />
-                  );
-                })}
-              </g>
-              <line x1="980" y1="420" x2="1010" y2="370" stroke="#0e2317" strokeWidth="6" />
-              <line x1="1040" y1="420" x2="1010" y2="370" stroke="#0e2317" strokeWidth="6" />
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Cloud Gate, the Bean"
-              onClick={() => setSelectedId("bean")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("bean"); else if (e.key === " ") { e.preventDefault(); setSelectedId("bean"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <ellipse cx="880" cy="390" rx="55" ry="28" fill="#cfe3ee" stroke="#f6f0dc" strokeWidth="2" />
-              <ellipse cx="865" cy="382" rx="18" ry="8" fill="#ffffff" opacity="0.8" />
-            </g>
-
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Buckingham Fountain"
-              onClick={() => setSelectedId("fountain")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSelectedId("fountain"); else if (e.key === " ") { e.preventDefault(); setSelectedId("fountain"); }
-              }}
-              className="cursor-pointer focus-visible:outline-3 focus-visible:outline-amber"
-            >
-              <ellipse cx="120" cy="400" rx="48" ry="12" fill="#7ec8e3" />
-              <path d="M100 400 Q120 360 140 400" fill="none" stroke="#bfe8f2" strokeWidth="3" />
-              <path d="M112 400 Q120 372 128 400" fill="none" stroke="#ffffff" strokeWidth="2" />
-            </g>
-          </svg>
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute top-[58%] left-0 z-10 w-full"
+            Labels {labelsOn ? "on" : "off"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaused((p) => !p)}
+            aria-pressed={paused}
+            className="min-h-11 rounded-full bg-cream px-4 text-sm font-black text-forest"
           >
-            <div className={`motion-safe:animate-train ${motion}`}>
-              <div className="flex w-56 gap-1">
-                {["#8fcf6a", "#f2b632", "#ff785a", "#8fcf6a"].map((c, i) => (
-                  <div key={i} className="h-8 w-14 rounded-md border-2 border-forest" style={{ background: c }}>
-                    <div className="mx-1 mt-1 flex gap-1">
-                      <span className="h-2 w-3 rounded-sm bg-cream" />
-                      <span className="h-2 w-3 rounded-sm bg-cream" />
-                      <span className="h-2 w-3 rounded-sm bg-cream" />
-                    </div>
+            {paused ? "Play" : "Pause"}
+          </button>
+        </div>
+      </div>
+
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          className={`flex h-full w-max motion-safe:animate-skyline ${motion}`}
+          style={{ animationDuration: `${skylineSeconds}s` }}
+        >
+          <SkylinePanel labelsOn={labelsOn} time={time} motion={motion} selectedId={selectedId ?? ""} onSelect={setSelectedId} />
+          <SkylinePanel labelsOn={labelsOn} time={time} motion={motion} selectedId={selectedId ?? ""} onSelect={setSelectedId} />
+        </div>
+
+        <div aria-hidden="true" className="pointer-events-none absolute top-[42%] left-0 z-10 w-full">
+          <div className={`motion-safe:animate-train ${motion}`}>
+            <div className="flex w-56 gap-1">
+              {["#8fcf6a", "#f2b632", "#ff785a", "#8fcf6a"].map((c, i) => (
+                <div key={i} className="h-8 w-14 rounded-md border-2 border-forest" style={{ background: c }}>
+                  <div className="mx-1 mt-1 flex gap-1">
+                    <span className="h-2 w-3 rounded-sm bg-cream" />
+                    <span className="h-2 w-3 rounded-sm bg-cream" />
+                    <span className="h-2 w-3 rounded-sm bg-cream" />
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-1 h-1 w-full bg-forest/80" />
-          </div>
-
-          <div className="relative z-20 border-t-4 border-forest bg-forest-deep/95 px-3 pt-3 pb-4">
-            <p className="mb-2 text-center text-xs font-black tracking-[.25em] text-amber uppercase">
-              Past venues, lit up for the night
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              {VENUES.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setSelectedId(v.id)}
-                  aria-pressed={selectedId === v.id}
-                  className={`min-h-16 rounded-xl border px-3 py-2.5 text-left ${
-                    selectedId === v.id
-                      ? "border-amber bg-amber text-forest"
-                      : "border-cream/25 bg-cream/10 text-cream"
-                  }`}
-                >
-                  <span className="block text-sm leading-tight font-black">{v.name}</span>
-                  <span className="mt-0.5 block text-xs leading-tight opacity-80">{v.note}</span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
+          <div className="mt-1 h-1 w-full bg-forest/80" />
+        </div>
 
-          <div aria-hidden="true" className="pointer-events-none relative z-20 h-10 overflow-hidden bg-[#1d4e6b]">
-            <div className={`motion-safe:animate-boat ${motion}`}>
-              <div className="flex h-10 w-32 items-end gap-1">
-                <span className="block h-4 w-28 rounded-t-lg bg-cream" />
-                <span className="block h-7 w-2 bg-forest" />
-              </div>
+        <div aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full overflow-hidden bg-[#1d4e6b]/90">
+          <div className={`motion-safe:animate-boat ${motion}`}>
+            <div className="flex h-8 w-32 items-end gap-1">
+              <span className="block h-4 w-28 rounded-t-lg bg-cream" />
+              <span className="block h-6 w-2 bg-forest" />
             </div>
-            <div className="absolute inset-x-0 bottom-1 h-px bg-white/30" />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Time of day">
-        {(["day", "dusk", "night"] as TimeOfDay[]).map((t) => (
+      <div className="relative z-20 border-t-4 border-forest bg-forest-deep px-3 pt-3 pb-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-black tracking-[.25em] text-amber uppercase">Past venues, lit up</p>
           <button
-            key={t}
             type="button"
-            onClick={() => setTime(t)}
-            aria-pressed={time === t}
-            className={`min-h-11 rounded-full border px-4 text-sm font-black ${
-              time === t ? "border-amber bg-amber text-forest" : "border-cream/30 bg-transparent text-cream"
-            }`}
+            onClick={() => setShowList((v) => !v)}
+            aria-expanded={showList}
+            className="min-h-11 rounded-full border border-cream/30 px-4 text-sm font-black text-cream"
           >
-            {SKY_LABEL[t]}
+            {showList ? "Hide list" : "Hidden in the skyline"}
           </button>
-        ))}
-      </div>
-
-      <article className="w-full rounded-2xl border border-cream/16 bg-cream/6 p-5 text-left">
-        <p className="text-xs font-black tracking-[.25em] text-amber uppercase">{selected.kind}</p>
-        <h2 className="mt-1 text-2xl font-black text-cream">{selected.name}</h2>
-        <p className="mt-1 text-base font-bold opacity-80">{selected.note}</p>
-        <p className="mt-2 text-base leading-relaxed opacity-90">{selected.detail}</p>
-        {selected.href && (
-          <p className="mt-3">
-            <Link href={selected.href} className="font-bold text-leaf underline underline-offset-2 hover:text-amber">
-              See it on Past Parties
-            </Link>
-          </p>
-        )}
-      </article>
-
-      <section aria-label="Spot them all" className="w-full">
-        <h2 className="text-center text-2xl font-black text-cream">Spot them all</h2>
-        <p className="mt-1 text-center text-base opacity-75">
-          Tap a building, a storefront, or a name below. Ten landmarks, five venues, one city.
-        </p>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {SPOTS.map((s) => (
+        </div>
+        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1" role="group" aria-label="Past venues">
+          {VENUES.map((v) => (
             <button
-              key={s.id}
+              key={v.id}
               type="button"
-              onClick={() => setSelectedId(s.id)}
-              aria-pressed={selectedId === s.id}
-              className={`min-h-11 rounded-xl border px-4 py-3 text-left ${
-                selectedId === s.id ? "border-amber bg-amber/20 text-cream" : "border-cream/16 bg-cream/6 text-cream"
+              onClick={() => setSelectedId(v.id)}
+              aria-pressed={selectedId === v.id}
+              className={`min-h-16 w-40 shrink-0 snap-start rounded-xl border px-3 py-2.5 text-left ${
+                selectedId === v.id ? "border-amber bg-amber text-forest" : "border-cream/25 bg-cream/10 text-cream"
               }`}
             >
-              <span className="block text-base font-black">{s.name}</span>
-              <span className="block text-sm opacity-70">
-                {s.kind} · {s.note}
-              </span>
+              <span className="block text-sm leading-tight font-black">{v.name}</span>
+              <span className="mt-0.5 block text-xs leading-tight opacity-80">{v.note}</span>
             </button>
           ))}
         </div>
-      </section>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Time of day and drift speed">
+          {(["day", "dusk", "night"] as TimeOfDay[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTime(t)}
+              aria-pressed={time === t}
+              className={`min-h-11 rounded-full border px-4 text-sm font-black capitalize ${
+                time === t ? "border-amber bg-amber text-forest" : "border-cream/30 bg-transparent text-cream"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+          <span className="mx-1 hidden h-6 w-px bg-cream/25 sm:block" aria-hidden="true" />
+          {(["slow", "normal", "fast"] as Speed[]).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSpeed(s)}
+              aria-pressed={speed === s}
+              className={`min-h-11 rounded-full border px-4 text-sm font-black capitalize ${
+                speed === s ? "border-leaf bg-leaf text-forest" : "border-cream/30 bg-transparent text-cream"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <section aria-label="Use it at the party" className="w-full rounded-2xl border border-cream/16 bg-cream/6 p-5">
-        <h2 className="text-xl font-black text-cream">Use it at the party</h2>
-        <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-base leading-relaxed">
-          <li>Project it on the venue TV, or leave it running on a laptop at the bar.</li>
-          <li>Set it to dusk at 9pm, then night as the party goes on.</li>
-          <li>Pause the motion if anyone finds it distracting, the skyline still looks good frozen.</li>
-          <li>Tap a storefront to tell the story of that year, then tap the next one.</li>
-        </ul>
-        <p className="mt-3 text-base">
-          <Link href="/arbor-trail" className="font-bold text-leaf underline underline-offset-2 hover:text-amber">
-            Play the Arbor Trail
-          </Link>
-          {" · "}
-          <Link href="/history" className="font-bold text-leaf underline underline-offset-2 hover:text-amber">
-            Past Parties
-          </Link>
-        </p>
-      </section>
-    </div>
+      {showList && (
+        <div className="absolute inset-x-3 bottom-40 z-30 max-h-[55%] overflow-y-auto rounded-2xl border border-cream/20 bg-forest-deep/95 p-4 shadow-card backdrop-blur">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-black text-cream">Hidden in the skyline</h2>
+            <button
+              type="button"
+              onClick={() => setShowList(false)}
+              className="min-h-11 min-w-11 rounded-full border border-cream/30 text-base font-black text-cream"
+              aria-label="Close list"
+            >
+              X
+            </button>
+          </div>
+          <p className="mb-3 text-sm opacity-75">Tap any name to see its story. Twelve landmarks, five venues, one city.</p>
+          <ul className="flex flex-col gap-1">
+            {SPOTS.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(s.id);
+                    setShowList(false);
+                  }}
+                  className="min-h-11 w-full rounded-xl px-3 py-2 text-left text-base font-bold text-cream hover:bg-cream/10"
+                >
+                  {s.name} <span className="font-normal opacity-60">, {s.kind.toLowerCase()}, {s.note}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm">
+            <Link href="/arbor-trail" className="font-bold text-leaf underline underline-offset-2">Play the Arbor Trail</Link>
+            {" · "}
+            <Link href="/history" className="font-bold text-leaf underline underline-offset-2">Past Parties</Link>
+          </p>
+        </div>
+      )}
+
+      {selected && (
+        <div className="absolute inset-x-3 bottom-40 z-30 rounded-2xl border border-cream/20 bg-forest-deep/95 p-4 shadow-card backdrop-blur" role="dialog" aria-label={selected.name}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black tracking-[.25em] text-amber uppercase">{selected.kind}</p>
+              <h2 className="mt-0.5 text-xl font-black text-cream">{selected.name}</h2>
+              <p className="mt-0.5 text-sm font-bold opacity-80">{selected.note}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              className="min-h-11 min-w-11 shrink-0 rounded-full border border-cream/30 text-base font-black text-cream"
+              aria-label="Close"
+            >
+              X
+            </button>
+          </div>
+          <p className="mt-2 text-base leading-relaxed opacity-90">{selected.detail}</p>
+          {selected.href && (
+            <p className="mt-2">
+              <Link href={selected.href} className="font-bold text-leaf underline underline-offset-2">See it on Past Parties</Link>
+            </p>
+          )}
+          <p className="mt-2 text-sm opacity-70">
+            <button type="button" onClick={() => setShowList(true)} className="font-bold text-cream underline underline-offset-2">
+              See every nod in the skyline
+            </button>
+          </p>
+        </div>
+      )}
+    </main>
   );
 }

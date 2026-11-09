@@ -25,6 +25,7 @@
   --animate-fall: fall 9s linear infinite;
   --animate-sway: sway 3.5s ease-in-out infinite;
   --animate-drift: drift 70s linear infinite;
+  --animate-skyline: skyline 120s linear infinite;
   --animate-train: train 18s linear infinite;
   --animate-boat: boat 45s linear infinite;
   --animate-spin-slow: spin-slow 40s linear infinite;
@@ -47,6 +48,14 @@
     }
     to {
       transform: translateX(130vw);
+    }
+  }
+  @keyframes skyline {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
     }
   }
   @keyframes train {
