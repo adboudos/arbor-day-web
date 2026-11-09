@@ -4,8 +4,9 @@
  */
 
 export const STATUS_SUMMARY =
-  "Venue not booked. Three contenders: Kirkwood, Ranalli's, Galway Arms. " +
-  "Seven calls still on Quinn's list, eight forms awaiting reply.";
+  "Updated Nov 8, 2026. Venue not booked. Three contenders: Kirkwood, Ranalli's, Galway Arms. " +
+  "Seven calls still on Quinn's list, eight forms awaiting reply. " +
+  "New shortlist adds: Village Tap and Doghaus side bar.";
 
 export interface Contender {
   name: string;
@@ -80,7 +81,6 @@ export const shortlist: ShortlistEntry[] = [
   { name: "Schubas", detail: "Form submitted, awaiting reply" },
   { name: "J. Parker" },
   { name: "Clover", detail: "722 W Grand Ave, River West" },
-  { name: "Big Star Wrigleyville" },
   { name: "Joe's on Weed St", detail: "940 W Weed; warehouse venue, live music, open late" },
   {
     name: "Old Pueblo Cantina",
@@ -108,6 +108,14 @@ export const shortlist: ShortlistEntry[] = [
   {
     name: "Kingston Mines",
     detail: "Blues Hall 150 / Doc's Room 50 / buyout 400; party@kingstonmines.com",
+  },
+  {
+    name: "Village Tap",
+    detail: "2055 W Roscoe St, Roscoe Village; heated beer garden, 30 drafts, open till 2am Fri",
+  },
+  {
+    name: "Doghaus side bar",
+    detail: "Dog Haus Biergarten Lincoln Park, 2464 N Lincoln Ave; side bar at Dog Haus, open till 2am",
   },
 ];
 
@@ -250,5 +258,23 @@ export const gimmicks: Gimmick[] = [
     name: "Seed mailer via the site",
     description: "Enter your address on arborday.beer, get seeds in the mail.",
     status: "idea",
+  },
+  {
+    name: "DIY Selphy photo booth strips",
+    description:
+      "Tripod, 8x8 Arbor Day backdrop, and a Canon Selphy CP1500 on a table. Guests take 3 photos, the app builds a 2x6 strip, the Selphy prints it in about 47 seconds. About $382 first year, about $127 each, paper is about 31 cents a print after that.",
+    status: "proposed",
+  },
+  {
+    name: "Red carpet photos",
+    description:
+      "Step and repeat backdrop, red carpet runner, and stanchions at the door. Tripod station for self serve, or a hired photographer for 2 hours, 9 to 11pm, if we want a real red carpet.",
+    status: "proposed",
+  },
+  {
+    name: "Caricature artist",
+    description:
+      "Live artist drawing guests on the spot, tree crowns and lumberjack hats drawn on. Soller Heads, $80 to $125 an hour, $240 to $375 for 3 hours. Book 2 hours, 9 to 11pm.",
+    status: "proposed",
   },
 ];

@@ -24,6 +24,12 @@
 
   --animate-fall: fall 9s linear infinite;
   --animate-sway: sway 3.5s ease-in-out infinite;
+  --animate-drift: drift 70s linear infinite;
+  --animate-train: train 18s linear infinite;
+  --animate-boat: boat 45s linear infinite;
+  --animate-spin-slow: spin-slow 40s linear infinite;
+  --animate-twinkle: twinkle 3s ease-in-out infinite;
+  --animate-bob: bob 4s ease-in-out infinite;
 
   @keyframes fall {
     to {
@@ -33,6 +39,53 @@
   @keyframes sway {
     50% {
       transform: rotate(3deg);
+    }
+  }
+  @keyframes drift {
+    from {
+      transform: translateX(-30vw);
+    }
+    to {
+      transform: translateX(130vw);
+    }
+  }
+  @keyframes train {
+    from {
+      transform: translateX(-25vw);
+    }
+    to {
+      transform: translateX(125vw);
+    }
+  }
+  @keyframes boat {
+    from {
+      transform: translateX(-15vw);
+    }
+    to {
+      transform: translateX(115vw);
+    }
+  }
+  @keyframes spin-slow {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
     }
   }
 }

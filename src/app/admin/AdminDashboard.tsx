@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { EmptyNote, PageShell, Section, Stat } from "@/components/ui";
 import {
   STATUS_SUMMARY,
@@ -261,6 +262,30 @@ export default function AdminDashboard() {
         <EmptyNote className="mt-4">
           Sticker designs needed. Somebody has to draw these.
         </EmptyNote>
+      </Section>
+
+      <Section
+        label="Roku City"
+        title="Roku City"
+        sub="The moving Chicago background for the site and the party TV."
+      >
+        <article className={card}>
+          <h3 className="text-xl font-black text-cream">Roku City, Chicago</h3>
+          <p className="mt-2 text-base leading-relaxed">
+            A moving skyline with Willis Tower, the Hancock Center, Marina
+            City, the Bean, the Navy Pier Ferris Wheel, the L, and the past
+            venues lit up as storefronts: Kincade&apos;s, Sluggers, Easy Bar,
+            and Field House, plus one dark storefront waiting for 2027.
+          </p>
+          <p className="mt-3">
+            <Link
+              href="/roku-city"
+              className="inline-block min-h-11 rounded-full bg-amber px-5 py-2.5 text-base font-black text-forest"
+            >
+              Open Roku City
+            </Link>
+          </p>
+        </article>
       </Section>
     </PageShell>
   );

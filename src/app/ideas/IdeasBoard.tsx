@@ -68,6 +68,7 @@ export default function IdeasBoard() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [category, setCategory] = useState<IdeaCategory>("idea");
+  const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("top");
   const [error, setError] = useState<string | null>(null);
@@ -128,18 +129,22 @@ export default function IdeasBoard() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setError(null);
     const clean = text.trim();
     if (clean.length < MIN_LENGTH) {
       setError("Give it at least a few characters. The box has standards.");
       return;
     }
+    setSubmitting(true);
     try {
       const row = await createIdeaRemote(clean.slice(0, MAX_LENGTH), category);
       setItems((prev) => [toBoardItem(row), ...prev]);
       setText("");
     } catch {
       setError("The box jammed. Give it another shot.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -201,7 +206,7 @@ export default function IdeasBoard() {
         type="button"
         aria-label={`${dir === 1 ? "Upvote" : "Downvote"}: ${item.text.slice(0, 60)}`}
         aria-pressed={active}
-        className={`flex h-7 w-9 cursor-pointer items-center justify-center rounded-full border text-xs leading-none text-forest ${
+        className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border text-xs leading-none text-forest ${
           active ? "border-amber bg-amber font-black" : "border-forest/20 bg-forest/8"
         }`}
         onClick={() => vote(dir, item.id)}
@@ -241,7 +246,7 @@ export default function IdeasBoard() {
                 role="radio"
                 aria-checked={category === c}
                 title={CATEGORIES[c].tagline}
-                className={`flex-1 cursor-pointer rounded-full border px-2 py-2.25 text-sm font-bold ${
+                className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-full border px-2 py-2.25 text-sm font-bold ${
                   category === c ? "border-amber bg-amber text-forest" : "border-cream/30 bg-forest/60 text-cream"
                 }`}
                 onClick={() => setCategory(c)}
@@ -264,7 +269,7 @@ export default function IdeasBoard() {
               {text.length}/{MAX_LENGTH}
             </span>
           </label>
-          <Button type="submit">Post it</Button>
+          <Button type="submit" disabled={submitting}>{submitting ? "Posting..." : "Post it"}</Button>
           {error && <ErrorNote>{error}</ErrorNote>}
         </form>
       </Section>
@@ -284,7 +289,7 @@ export default function IdeasBoard() {
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.75 text-sm font-bold ${
+                  className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.75 text-sm font-bold ${
                     active ? "border-cream bg-cream text-forest" : "border-cream/22 bg-cream/7 text-cream"
                   }`}
                   onClick={() => setFilter(f)}
@@ -312,7 +317,7 @@ export default function IdeasBoard() {
                 key={s}
                 type="button"
                 aria-pressed={sort === s}
-                className={`cursor-pointer rounded-full border px-3.5 py-1.75 text-sm font-bold ${
+                className={`min-h-11 cursor-pointer rounded-full border px-3.5 py-1.75 text-sm font-bold ${
                   sort === s ? "border-amber bg-amber text-forest" : "border-cream/30 bg-transparent text-cream"
                 }`}
                 onClick={() => setSort(s)}

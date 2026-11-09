@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/ideas", label: "Ideas & Requests" },
   { href: "/photo-wall", label: "Photo Wall" },
   { href: "/arbor-trail", label: "Arbor Trail" },
+  { href: "/roku-city", label: "Roku City" },
   { href: "/war-room", label: "War Room" },
 ];
 

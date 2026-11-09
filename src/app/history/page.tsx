@@ -6,7 +6,22 @@ import { PageShell } from "@/components/ui";
 export const revalidate = 3600;
 
 export default async function HistoryPage() {
-  const editions = await fetchEditions();
+  let editions;
+  try {
+    editions = await fetchEditions();
+  } catch {
+    return (
+      <PageShell
+        title="Past Arbor Days"
+        tagline="Every bar that's hosted the party, pinned on one map."
+      >
+        <p className="mt-6 max-w-136 text-center text-base leading-relaxed">
+          The timeline would not load. Check your connection and refresh, the
+          past parties are still there.
+        </p>
+      </PageShell>
+    );
+  }
 
   /** Pins are derived from the editions data, so the map has no hardcoded venues. */
   const pins: MapPin[] = editions

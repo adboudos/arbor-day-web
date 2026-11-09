@@ -1,7 +1,8 @@
 /**
  * The War Room: the 2027 venue hunt, classified edition.
  * Every venue below is under active consideration. None of this is real.
- * This page is intentionally unlinked and noindexed. Do not tell anyone.
+ * This page is linked in the site nav and noindexed, so guests can find it
+ * but search engines cannot. The venues below are jokes, not real leads.
  */
 
 export interface JokeVenue {
