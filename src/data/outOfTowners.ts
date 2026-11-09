@@ -94,8 +94,9 @@ function shortDisplayName(r: NominatimResult): string {
 
 /**
  * Geocode a hometown string. Throws on network failure; returns null when
- * nothing is found. `isIllinois` is best-effort from the geocoder's address
- * data, so callers should also check the bounding box.
+ * nothing is found. `isIllinois` comes from the geocoder's state field.
+ * The bounding box is only a fallback when the state is empty, because the
+ * box also covers Gary, IN and Davenport, IA.
  */
 export async function geocodeHometown(
   query: string,
@@ -111,8 +112,9 @@ export async function geocodeHometown(
   const lat = parseFloat(r.lat);
   const lng = parseFloat(r.lon);
   const state = r.address?.state ?? "";
-  const isIllinois =
-    /illinois/i.test(state) || inIllinoisBbox(lat, lng);
+  const isIllinois = state
+    ? /illinois/i.test(state)
+    : inIllinoisBbox(lat, lng);
   return {
     lat,
     lng,
