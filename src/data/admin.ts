@@ -4,9 +4,9 @@
  */
 
 export const STATUS_SUMMARY =
-  "Updated Nov 8, 2026. Venue not booked. Three contenders: Kirkwood, Ranalli's, Galway Arms. " +
+  "Updated Nov 13, 2026. Venue not booked. Three contenders: Kirkwood, Ranalli's, Galway Arms. " +
   "Seven calls still on Quinn's list, eight forms awaiting reply. " +
-  "New shortlist adds: Village Tap and Doghaus side bar.";
+  "New: Bars in Question and Previous Year Contenders. The contender lists are now editable on this page.";
 
 export interface Contender {
   name: string;
@@ -116,6 +116,75 @@ export const shortlist: ShortlistEntry[] = [
   {
     name: "Doghaus side bar",
     detail: "Dog Haus Biergarten Lincoln Park, 2464 N Lincoln Ave; side bar at Dog Haus, open till 2am",
+  },
+];
+
+/**
+ * Bars in Question (Quinn, Nov 13, 2026): names he could remember, plus
+ * Rizzo's and Schubas added the same day. Rizzo's and Schubas sit here
+ * because they are current cycle leads; Butcher's Tap sits with the
+ * previous year contenders because it was a 2024 outreach.
+ */
+export const barsInQuestion: ShortlistEntry[] = [
+  {
+    name: "Homeslice",
+    detail: "938 W Webster Ave, Lincoln Park. Happy Hospitality, re-engage Amber Heilmann. Fri till midnight",
+  },
+  {
+    name: "Doghaus LP",
+    detail: "Dog Haus Biergarten Lincoln Park, 2464 N Lincoln Ave. Side bar, open till 2am",
+  },
+  {
+    name: "Albion Manor / AJ Hudson's",
+    detail: "Sister pubs, same owners. Albion Manor: 1480 W Webster, Lincoln Park, English pub and cocktail parlour, Fri till 2am. AJ Hudson's: 3801 N Ashland, Lakeview",
+  },
+  {
+    name: "Village Tap",
+    detail: "2055 W Roscoe St, Roscoe Village. Heated beer garden, 30 drafts, open till 2am Fri",
+  },
+  {
+    name: "Prost!",
+    detail: "2566 N Lincoln Ave, Lincoln Park. German beer hall, 24 German drafts, Fri till 1am",
+  },
+  {
+    name: "Murphy's Bleachers",
+    detail: "3655 N Sheffield Ave, Wrigleyville. Entire back bar available Apr 30. Prices reset Jan 1",
+  },
+  {
+    name: "Brokedown Palace",
+    detail: "3456 N Clark St, Wrigleyville. Happy Hospitality sports bar and pub",
+  },
+  {
+    name: "Rizzo's",
+    detail: "Rizzo's Bar and Inn, 3658 N Clark St, Wrigleyville. Family sports tavern, big patio. Fri hours to 10pm, flag the close",
+  },
+  {
+    name: "Schubas",
+    detail: "3159 N Southport Ave, Lakeview. Historic live music tavern, Fri till 1am. Form submitted, awaiting reply",
+  },
+];
+
+/** Previous year contenders (Quinn, Nov 13, 2026). */
+export const previousYearContenders: ShortlistEntry[] = [
+  {
+    name: "Pilot Project",
+    detail: "Pilot Project Brewing, 2140 N Milwaukee Ave, Logan Square. Brewery incubator taproom, Fri till 11pm",
+  },
+  {
+    name: "The Other Side",
+    detail: "2436 N Clark St, Lincoln Park. Sports bar, Fri till 2am",
+  },
+  {
+    name: "Galway Arms",
+    detail: "2442 N Clark St. Upstairs free Apr 30, $250 room fee, seats 40 to 50, max 65",
+  },
+  {
+    name: "Wiener's Circle",
+    detail: "2622 N Clark St, Lincoln Park. Cash bar option, Feb to Mar 2026 thread",
+  },
+  {
+    name: "Butcher's Tap",
+    detail: "3553 N Southport Ave, Lakeview. Gastropub, 115 plus beers. 2024 outreach",
   },
 ];
 

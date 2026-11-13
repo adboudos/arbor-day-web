@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { EmptyNote, PageShell, Section, Stat } from "@/components/ui";
+import { Button, EmptyNote, PageShell, Section, Stat } from "@/components/ui";
 import {
   STATUS_SUMMARY,
+  barsInQuestion,
   contenders,
   criteria,
   deadVenues,
@@ -11,11 +13,18 @@ import {
   formOnly,
   gimmicks,
   phoneOnly,
+  previousYearContenders,
   principles,
   replies,
   shortlist,
   type GimmickStatus,
 } from "@/data/admin";
+import { toContenders, toNameItems } from "@/lib/adminLists";
+import {
+  ContenderCards,
+  NameListSection,
+  useEditableList,
+} from "./EditableLists";
 
 const PARTY_DATE = new Date(2027, 3, 30);
 
@@ -35,6 +44,21 @@ const card =
   "w-full rounded-2xl border border-cream/16 bg-cream/6 p-5 text-left";
 
 export default function AdminDashboard() {
+  const [editing, setEditing] = useState(false);
+  const contendersList = useEditableList(
+    "contenders",
+    toContenders(contenders),
+  );
+  const shortlistList = useEditableList("shortlist", toNameItems(shortlist));
+  const barsInQuestionList = useEditableList(
+    "bars-in-question",
+    toNameItems(barsInQuestion),
+  );
+  const previousYearList = useEditableList(
+    "previous-year-contenders",
+    toNameItems(previousYearContenders),
+  );
+
   return (
     <PageShell
       badge={
@@ -52,8 +76,24 @@ export default function AdminDashboard() {
         </p>
       </div>
 
+      <div className="mt-6 flex w-full flex-col items-center gap-2">
+        <Button
+          type="button"
+          variant={editing ? "primary" : "ghost"}
+          onClick={() => setEditing((value) => !value)}
+        >
+          {editing ? "Done editing" : "Edit lists"}
+        </Button>
+        {editing && (
+          <p className="max-w-md text-center text-sm leading-relaxed opacity-70">
+            Rank is the list order. Move a bar up or down to re-rank it. Edits
+            save in this browser only. Reset restores the site defaults.
+          </p>
+        )}
+      </div>
+
       <div className="mt-6 flex flex-wrap justify-center gap-2.75">
-        <Stat value={contenders.length} label="contenders" />
+        <Stat value={contendersList.items.length} label="contenders" />
         <Stat value={replies.length} label="replies in" />
         <Stat
           value={phoneOnly.length + formOnly.length}
@@ -67,40 +107,7 @@ export default function AdminDashboard() {
         title="Contenders"
         sub="The shortlist as of the Sep 30 co-owner update."
       >
-        <div className="flex w-full flex-col gap-4">
-          {contenders.map((c) => (
-            <article key={c.name} className={card}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-black text-cream">{c.name}</h3>
-                  <p className="text-sm font-bold opacity-60">{c.location}</p>
-                </div>
-                <span className="shrink-0 rounded-full border border-amber/50 bg-amber/25 px-3 py-1 text-xs font-black tracking-wider text-amber uppercase">
-                  Contender
-                </span>
-              </div>
-              <ul className="mt-3 flex flex-col gap-1.5">
-                {c.deal.map((d) => (
-                  <li key={d} className="text-base">
-                    {d}
-                  </li>
-                ))}
-              </ul>
-              {c.caveats.length > 0 && (
-                <ul className="mt-2.5 flex flex-col gap-1.5">
-                  {c.caveats.map((d) => (
-                    <li
-                      key={d}
-                      className="rounded-lg border border-ember/40 bg-ember/10 px-3 py-2 text-sm font-bold text-ember-light"
-                    >
-                      Watch out: {d}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
-          ))}
-        </div>
+        <ContenderCards list={contendersList} editing={editing} />
       </Section>
 
       <Section
@@ -127,25 +134,29 @@ export default function AdminDashboard() {
         </div>
       </Section>
 
-      <Section
+      <NameListSection
+        list={shortlistList}
         label="Full shortlist"
         title="The Shortlist"
         sub="Everywhere still in play."
-      >
-        <ul className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {shortlist.map((s) => (
-            <li
-              key={s.name}
-              className="rounded-xl border border-cream/16 bg-cream/6 px-4 py-3"
-            >
-              <b className="text-cream">{s.name}</b>
-              {s.detail && (
-                <span className="block text-sm opacity-65">{s.detail}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </Section>
+        editing={editing}
+      />
+
+      <NameListSection
+        list={barsInQuestionList}
+        label="Bars in question"
+        title="Bars in Question"
+        sub="Names Quinn could remember, Nov 13. Not asked yet."
+        editing={editing}
+      />
+
+      <NameListSection
+        list={previousYearList}
+        label="Previous year contenders"
+        title="Previous Year Contenders"
+        sub="From earlier hunts, still worth a look."
+        editing={editing}
+      />
 
       <Section
         label="Awaiting outreach"
